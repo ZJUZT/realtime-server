@@ -368,15 +368,20 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
     private void doSync(long userID) throws Exception {
         Collection<Channel> channels = ChannelManager
                 .getChannelByUserID(userID);
+        ChannelManager.displayUserChannelMapping();
         if (channels == null) {
             logger.info(uuid, "No active channels for user:{}", userID);
             return;
         }
         BaseAction msg = new BaseAction(ActionType.ACTION_NEW_INFO);
         String request = GsonUtils.getGson().toJson(msg);
-        TextWebSocketFrame frame = new TextWebSocketFrame(request);
+//        TextWebSocketFrame frame = new TextWebSocketFrame(request);
+//        logger.info(uuid, "{} Channel for user:{}", channels.size(), userID);
         for (Channel channel : channels) {
-            channel.writeAndFlush(frame);
+            if (!channel.isOpen()) {
+                continue;
+            }
+            channel.writeAndFlush(new TextWebSocketFrame(request));
         }
     }
 }

@@ -120,7 +120,7 @@ public class ChannelManager {
         }
     }
 
-    public static void displyUserChannelMapping() {
+    public static void displayUserChannelMapping() {
         logger.info(uuid, "Current User Channel Mapping: {}",
                 userChannelMapping);
     }
