@@ -33,8 +33,6 @@ public class ChannelManager {
     private final static long serverPort = Config
             .getNumber("/configuration/websocket_port", 8080);
 
-
-
     private static synchronized void setUserSessionInfoInChannel(
             Channel channel, UserSessionInfo info) {
         channel.attr(userSessionKey).set(info);
@@ -52,7 +50,6 @@ public class ChannelManager {
         }
         return info.getSessionID();
     }
-
 
     /**
      * add user-channel into the mapping
@@ -74,8 +71,8 @@ public class ChannelManager {
         //stored the real-time server info for each online user in cache
 
         //        memClient.set(userID + "", 0, serverHost + ":" + serverPort);
-        MemCachedUtil.writeMemCached(userID + "", 0,
-                serverHost + ":" + serverPort);
+        MemCachedUtil
+                .writeMemCached(userID + "", 0, serverHost + ":" + serverPort);
         //TODO
         LogUtils.logSessionInfo(logger, channel,
                 "Added to the cache: user {} is on {}", userID,

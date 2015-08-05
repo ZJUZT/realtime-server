@@ -14,7 +14,8 @@ import com.egeio.realtime.websocket.utils.HeartbeatsUtils;
  */
 public class WebSocketInitializer extends ChannelInitializer<SocketChannel> {
     private int port;
-    public WebSocketInitializer(int port){
+
+    public WebSocketInitializer(int port) {
         this.port = port;
     }
 
@@ -25,8 +26,8 @@ public class WebSocketInitializer extends ChannelInitializer<SocketChannel> {
         socketChannel.pipeline().addLast(new HttpObjectAggregator(65536));
         socketChannel.pipeline().addLast(
                 new IdleStateHandler(HeartbeatsUtils.getMaxReaderIdleTime(),
-                        HeartbeatsUtils.getMaxWriterIdleTime(), HeartbeatsUtils
-                        .getMaxAllIdleTime()));
+                        HeartbeatsUtils.getMaxWriterIdleTime(),
+                        HeartbeatsUtils.getMaxAllIdleTime()));
         socketChannel.pipeline().addLast(new IdleEventHandler());
         socketChannel.pipeline().addLast(new WebSocketHandler(port));
     }

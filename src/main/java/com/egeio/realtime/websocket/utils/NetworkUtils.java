@@ -10,7 +10,7 @@ import org.dom4j.Element;
 /**
  * This is an utility class for network related tasks such as getting the
  * external IP address of this server
- * 
+ *
  * @author rogerlai
  * @date 2014/12/08
  */
@@ -31,8 +31,8 @@ public class NetworkUtils {
 
     private static String getExternalIpAddressFromConfig() {
         String address = "";
-        Element ipElement = Config.getConfig().getElement(
-                "/configuration/ip_address");
+        Element ipElement = Config.getConfig()
+                .getElement("/configuration/ip_address");
 
         if (ipElement != null) {
             address = ipElement.getTextTrim();

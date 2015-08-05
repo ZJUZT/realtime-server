@@ -14,12 +14,12 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-/**This class provides interface for writing data and deleting data from memory cached
+/**
+ * This class provides interface for writing data and deleting data from memory cached
  * Created by think on 2015/8/4.
  */
 public class MemCachedUtil {
-    private static Logger logger = LoggerFactory
-            .getLogger(MemCachedUtil.class);
+    private static Logger logger = LoggerFactory.getLogger(MemCachedUtil.class);
     private static MyUUID uuid = new MyUUID();
     private static MemcachedClient memClient;
 
@@ -27,6 +27,7 @@ public class MemCachedUtil {
             .getElement("/configuration/memcached/host").getText();
     private final static long memPort = Config
             .getNumber("/configuration/memcached/port", 11211);
+
     //for MemCached Client
     static {
         try {
@@ -82,7 +83,6 @@ public class MemCachedUtil {
     }
 
     /**
-     *
      * @param userID
      * @param expireTime
      * @param realTimeNodeAddress
@@ -90,7 +90,7 @@ public class MemCachedUtil {
      */
     public synchronized static void deleteFromMemCached(String userID,
             int expireTime, String realTimeNodeAddress) throws Exception {
-        if(ChannelManager.getChannelByUserID(Long.valueOf(userID))!=null){
+        if (ChannelManager.getChannelByUserID(Long.valueOf(userID)) != null) {
             //still has active channels, no need deleting node node address from cache
             return;
         }

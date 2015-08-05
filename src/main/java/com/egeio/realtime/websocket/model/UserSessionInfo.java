@@ -13,40 +13,37 @@ public class UserSessionInfo {
     private transient String token;
     private transient MyUUID sessionID;
 
-    @SerializedName("device_id")
-    private String deviceID;
+    @SerializedName("device_id") private String deviceID;
 
-    @SerializedName("user_id")
-    private long userID;
+    @SerializedName("user_id") private long userID;
 
-    @SerializedName("user_name")
-    private String userName;
+    @SerializedName("user_name") private String userName;
 
-    @SerializedName("connect_time")
-    private Date connectTime;
+    @SerializedName("connect_time") private Date connectTime;
 
-    public UserSessionInfo(String token,String deviceID,long userID,String userName){
+    public UserSessionInfo(String token, String deviceID, long userID,
+            String userName) {
         //user userID-deviceID in UUID
-        this.sessionID = new MyUUID(String.format("%s-%s",userID,deviceID));
+        this.sessionID = new MyUUID(String.format("%s-%s", userID, deviceID));
         this.token = token;
         this.deviceID = deviceID;
         this.userID = userID;
         this.connectTime = new Date();
     }
 
-    public MyUUID getSessionID(){
+    public MyUUID getSessionID() {
         return sessionID;
     }
 
-    public String getToken(){
+    public String getToken() {
         return token;
     }
 
-    public String getDeviceID(){
+    public String getDeviceID() {
         return deviceID;
     }
 
-    public long getUserID(){
+    public long getUserID() {
         return userID;
     }
 

@@ -17,7 +17,7 @@ import java.security.GeneralSecurityException;
 
 /**
  * This is the utility class for authentication with web server
- * 
+ *
  * @author rogerlai
  * @date 2014/12/08
  */
@@ -33,14 +33,14 @@ public class AuthenticationUtils {
     private static String API;
 
     static {
-        Element protocol = Config.getConfig().getElement(
-                "/configuration/auth_endpoint/protocol");
+        Element protocol = Config.getConfig()
+                .getElement("/configuration/auth_endpoint/protocol");
 
-        Element host = Config.getConfig().getElement(
-                "/configuration/auth_endpoint/host");
+        Element host = Config.getConfig()
+                .getElement("/configuration/auth_endpoint/host");
 
-        Element api = Config.getConfig().getElement(
-                "/configuration/auth_endpoint/api");
+        Element api = Config.getConfig()
+                .getElement("/configuration/auth_endpoint/api");
 
         if (protocol == null || host == null || api == null) {
             logger.error(uuid,
@@ -75,8 +75,8 @@ public class AuthenticationUtils {
                 throw new Exception("failed to get response");
             }
 
-            JsonObject jsonResponse = GsonUtils.getGson().fromJson(response,
-                    JsonObject.class);
+            JsonObject jsonResponse = GsonUtils.getGson()
+                    .fromJson(response, JsonObject.class);
 
             if (jsonResponse == null) {
                 throw new Exception("failed to get correct response");

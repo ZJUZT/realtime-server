@@ -56,7 +56,7 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
     private static final int FAILED_STATUS_CODE = 1;
     private static final int INVALID_ACTION_STATUS_CODE = 2;
 
-//    private static final int INITIAL_DELAY_IN_SECONDS = 2;
+    //    private static final int INITIAL_DELAY_IN_SECONDS = 2;
     private WebSocketServerHandshaker handShaker;
     private static final String WEBSOCKET_PATH = "/websocket";
     private static final String HTTP_REQUEST_PATH = "/push";
@@ -153,28 +153,30 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
         //GET method
         //        if (request.method() != GET || (!(request.uri().equals(WEBSOCKET_PATH)))
         //                && IsStatsRequestEnables) {
-//        logger.info(uuid,"URI:{}",request.uri());
+        //        logger.info(uuid,"URI:{}",request.uri());
         if (request.method() == GET) {
-            if (request.uri().equals(WEBSOCKET_PATH)||request.uri().equals("/")) {
+            if (request.uri().equals(WEBSOCKET_PATH) || request.uri()
+                    .equals("/")) {
                 //handshake
                 WebSocketServerHandshakerFactory wsFactory = new WebSocketServerHandshakerFactory(
                         getWebSocketLocation(), null, true);
                 handShaker = wsFactory.newHandshaker(request);
                 if (handShaker == null) {
-                    WebSocketServerHandshakerFactory.sendUnsupportedVersionResponse(
-                            channelHandlerContext.channel());
+                    WebSocketServerHandshakerFactory
+                            .sendUnsupportedVersionResponse(
+                                    channelHandlerContext.channel());
                 }
                 else {
-                    handShaker.handshake(channelHandlerContext.channel(), request);
+                    handShaker.handshake(channelHandlerContext.channel(),
+                            request);
                 }
             }
 
-//            else if(request.uri().equals("/")){
-//                sendHttpResponse(channelHandlerContext, request,
-//                        new DefaultFullHttpResponse(HTTP_1_1, OK));
-//                return;
-//            }
-
+            //            else if(request.uri().equals("/")){
+            //                sendHttpResponse(channelHandlerContext, request,
+            //                        new DefaultFullHttpResponse(HTTP_1_1, OK));
+            //                return;
+            //            }
 
         }
         //POST method
@@ -375,8 +377,8 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
         }
         BaseAction msg = new BaseAction(ActionType.ACTION_NEW_INFO);
         String request = GsonUtils.getGson().toJson(msg);
-//        TextWebSocketFrame frame = new TextWebSocketFrame(request);
-//        logger.info(uuid, "{} Channel for user:{}", channels.size(), userID);
+        //        TextWebSocketFrame frame = new TextWebSocketFrame(request);
+        //        logger.info(uuid, "{} Channel for user:{}", channels.size(), userID);
         for (Channel channel : channels) {
             if (!channel.isOpen()) {
                 continue;

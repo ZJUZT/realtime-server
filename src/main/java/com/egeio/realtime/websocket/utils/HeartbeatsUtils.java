@@ -15,12 +15,12 @@ public class HeartbeatsUtils {
         MAX_READER_IDLE_TIME_IN_SECONDS = Config
                 .getNumber("/configuration/heartbeat/reader_idle_time",
                         MAX_READER_IDLE_TIME_IN_SECONDS);
-        MAX_WRITER_IDLE_TIME_IN_SECONDS = Config.getNumber(
-                "/configuration/heartbeat/writer_idle_time",
-                MAX_WRITER_IDLE_TIME_IN_SECONDS);
-        MAX_ALL_IDLE_TIME_IN_SECONDS = Config.getNumber(
-                "/configuration/heartbeat/all_idle_time",
-                MAX_ALL_IDLE_TIME_IN_SECONDS);
+        MAX_WRITER_IDLE_TIME_IN_SECONDS = Config
+                .getNumber("/configuration/heartbeat/writer_idle_time",
+                        MAX_WRITER_IDLE_TIME_IN_SECONDS);
+        MAX_ALL_IDLE_TIME_IN_SECONDS = Config
+                .getNumber("/configuration/heartbeat/all_idle_time",
+                        MAX_ALL_IDLE_TIME_IN_SECONDS);
     }
 
     public static int getMaxReaderIdleTime() {

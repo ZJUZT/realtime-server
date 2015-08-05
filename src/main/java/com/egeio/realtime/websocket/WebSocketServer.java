@@ -26,17 +26,18 @@ public class WebSocketServer {
         this.port = port;
     }
 
-    public void run() throws Exception{
+    public void run() throws Exception {
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
-        try{
+        try {
             ServerBootstrap b = new ServerBootstrap();
-            b.group(bossGroup, workerGroup).channel(NioServerSocketChannel.class)
+            b.group(bossGroup, workerGroup)
+                    .channel(NioServerSocketChannel.class)
                     .childHandler(new WebSocketInitializer(port))
                     .option(ChannelOption.SO_BACKLOG, 128)
                     .childOption(ChannelOption.SO_KEEPALIVE, true);
             ChannelFuture f = b.bind(port).sync();
-            logger.info(uuid,"WebSocket server started at port {}",port);
+            logger.info(uuid, "WebSocket server started at port {}", port);
             f.channel().closeFuture().sync();
         }
         finally {
@@ -45,12 +46,12 @@ public class WebSocketServer {
         }
     }
 
-    public static void main(String [] args){
+    public static void main(String[] args) {
         int port;
-        if(args.length>0){
+        if (args.length > 0) {
             port = Integer.parseInt((args[0]));
         }
-        else{
+        else {
             port = 8080;
         }
         try {
@@ -58,7 +59,7 @@ public class WebSocketServer {
         }
         catch (Exception e) {
             //            e.printStackTrace();
-            logger.error(uuid,e,"failed to start the realTime server");
+            logger.error(uuid, e, "failed to start the realTime server");
         }
     }
 

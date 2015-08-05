@@ -14,8 +14,8 @@ public class WebClient extends com.egeio.core.web.WebClient {
     }
 
     public WebClient(String certFilePath, String keyStorePassword,
-            String certificatePassword) throws GeneralSecurityException,
-            IOException {
+            String certificatePassword)
+            throws GeneralSecurityException, IOException {
         super(certFilePath, keyStorePassword, certificatePassword);
     }
 

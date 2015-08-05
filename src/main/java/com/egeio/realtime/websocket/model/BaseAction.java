@@ -7,22 +7,20 @@ import com.google.gson.annotations.SerializedName;
  * Base entity for class of actions
  */
 public class BaseAction {
-    @SerializedName("action")
-    protected String action;
+    @SerializedName("action") protected String action;
 
-    @SerializedName("action_info")
-    protected Object actionInfo;
+    @SerializedName("action_info") protected Object actionInfo;
 
-    public BaseAction(String action){
+    public BaseAction(String action) {
         this.action = action;
     }
 
-    public  BaseAction(String action,Object info){
+    public BaseAction(String action, Object info) {
         this.action = action;
         this.actionInfo = info;
     }
 
-    public Object getActionInfo(){
+    public Object getActionInfo() {
         return actionInfo;
     }
 }

@@ -3,7 +3,7 @@ package com.egeio.realtime.websocket.exception;
 /**
  * This is the com.egeio.realtime.exception class to identify that something wrong happened when
  * trying to send request and get response from remote server
- * 
+ *
  * @author rogerlai
  * @date 2014/12/08
  */
