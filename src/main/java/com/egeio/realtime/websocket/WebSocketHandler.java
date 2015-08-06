@@ -85,10 +85,10 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
         this.port = port;
     }
 
+    //send moi
     private static void sendMonitorInfo() {
-        Map<String, String> tags = new HashMap<String, String>();
+        Map<String, String> tags = new HashMap<>();
 
-        //TODO
         long value = ChannelManager.getOnlineUserNum();
         tags.put("type", "online_users_count");
 
@@ -100,7 +100,7 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
         }
 
         MonitorClient.Record record = new MonitorClient.Record(value, tags);
-        List<MonitorClient.Record> records = new ArrayList<MonitorClient.Record>();
+        List<MonitorClient.Record> records = new ArrayList<>();
         records.add(record);
 
         opentsdbClient.send(records);
@@ -119,6 +119,12 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
         }
     }
 
+    /**
+     * remove channel from mapping when channel is inactive
+     *
+     * @param ctx channel context
+     * @throws Exception
+     */
     @Override public void channelInactive(ChannelHandlerContext ctx)
             throws Exception {
         LogUtils.logSessionInfo(logger, ctx.channel(), "channel inactive");
@@ -126,6 +132,12 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
         super.channelInactive(ctx);
     }
 
+    /**
+     * remove channel from mapping when channel is unregistered
+     *
+     * @param ctx channel context
+     * @throws Exception
+     */
     @Override public void channelUnregistered(ChannelHandlerContext ctx)
             throws Exception {
         LogUtils.logSessionInfo(logger, ctx.channel(), "channel unregistered");
@@ -139,21 +151,12 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
      * 2. The http request sent by HAProxy for load balance
      * 3. The http request sent by EventProcessor to hint new info to push to client
      *
-     * @param channelHandlerContext
-     * @param request
+     * @param channelHandlerContext channel context
+     * @param request               request sent from client
      * @throws Exception
      */
     private void handleHttp(ChannelHandlerContext channelHandlerContext,
             FullHttpRequest request) throws Exception {
-        String enabledStatsPath = "/configuration/enable_stats_request";
-        boolean IsStatsRequestEnables = Config
-                .getBoolean(enabledStatsPath, false);
-        //        logger.info(uuid,"Request URI:{}",request.uri());
-
-        //GET method
-        //        if (request.method() != GET || (!(request.uri().equals(WEBSOCKET_PATH)))
-        //                && IsStatsRequestEnables) {
-        //        logger.info(uuid,"URI:{}",request.uri());
         if (request.method() == GET) {
             if (request.uri().equals(WEBSOCKET_PATH) || request.uri()
                     .equals("/")) {
@@ -171,18 +174,11 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
                             request);
                 }
             }
-
-            //            else if(request.uri().equals("/")){
-            //                sendHttpResponse(channelHandlerContext, request,
-            //                        new DefaultFullHttpResponse(HTTP_1_1, OK));
-            //                return;
-            //            }
-
         }
         //POST method
+        //handle action to push new information in http request
         if (request.method() == POST && request.uri()
                 .equals(HTTP_REQUEST_PATH)) {
-            //handle action to push new information in http request
 
             HttpPostRequestDecoder decoder = new HttpPostRequestDecoder(
                     new DefaultHttpDataFactory(false), request);
@@ -195,13 +191,8 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
                 userID = attribute.getValue();
             }
 
-            //            String tokens = request.content()
-            //                    .toString(io.netty.util.CharsetUtil.UTF_8);
-            //            long userID = Long.valueOf(tokens.split("=")[1]);
-            //TODO
-            //Send ACK
             if (userID != null && !userID.equals("")) {
-                sendHttpResponse(channelHandlerContext, request,
+                sendHttpResponse(channelHandlerContext,
                         new DefaultFullHttpResponse(HTTP_1_1, OK));
                 doSync(Long.valueOf(userID));
             }
@@ -213,9 +204,10 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
     }
 
     /**
-     * @return
+     * Get webSocket location
+     *
+     * @return webSocket location
      */
-
     private String getWebSocketLocation() {
         String protocol = "ws";
         String uri = null;
@@ -231,18 +223,18 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
     }
 
     /**
-     * @param ctx
-     * @param req
-     * @param res
+     * Send http response
+     *
+     * @param ctx channel context
+     * @param res http response
      */
     private void sendHttpResponse(ChannelHandlerContext ctx,
-            FullHttpRequest req, FullHttpResponse res) {
+            FullHttpResponse res) {
         if (res.status().code() != 200) {
             ByteBuf buf = Unpooled
                     .copiedBuffer(res.status().toString(), CharsetUtil.UTF_8);
             res.content().writeBytes(buf);
             buf.release();
-            //TODO
         }
 
         ctx.channel().writeAndFlush(res);
@@ -250,8 +242,10 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
     }
 
     /**
-     * @param channelHandlerContext
-     * @param frame
+     * parse webSocket frame, get the content and perform the correct action
+     *
+     * @param channelHandlerContext channel context
+     * @param frame                 webSocket frame
      * @throws Exception
      */
     private void handleWebSocket(ChannelHandlerContext channelHandlerContext,
@@ -262,7 +256,7 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
             LogUtils.logSessionInfo(logger, channel,
                     "Channel closed from client");
 
-            //remove the channel from map
+            //remove the channel from mapping
             ChannelManager.removeUserChannel(channel);
 
             handShaker.close(channelHandlerContext.channel(),
@@ -282,12 +276,11 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
 
         String req = ((TextWebSocketFrame) frame).text();
         LogUtils.logSessionInfo(logger, channel, "channel received {}", req);
-        String res = null;
+        String res;
         JsonObject reqJson = GsonUtils.getGson()
                 .fromJson(req, JsonObject.class);
         BaseResponse baseRes = new BaseResponse(
                 reqJson.get("action").getAsString(), OK_STATUS_CODE);
-        //        LogUtils.logSessionInfo(logger, channel, "action content {}", reqJson.get("action"));
         try {
             if (reqJson.get("action") == null) {
                 baseRes.setStatusCode(FAILED_STATUS_CODE);
@@ -306,7 +299,7 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
 
             else if (reqJson.get("action").getAsString()
                     .equalsIgnoreCase(ActionType.ACTION_LOGOUT)) {
-                doLogout(reqJson, channel);
+                doLogout(channel);
             }
             else {
                 baseRes.setStatusCode(INVALID_ACTION_STATUS_CODE);
@@ -325,23 +318,21 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
 
     }
 
+    /**
+     * add user channel into mapping
+     *
+     * @param json    json object sent by client
+     * @param channel user channel
+     * @throws Exception
+     */
     private void doLogin(JsonObject json, Channel channel) throws Exception {
         String authToken = json.get("action_info").getAsJsonObject()
                 .get("auth_token").getAsString();
 
-        //need userID and name for now
-
-        //        String userID = json.get("action_info").getAsJsonObject().get("user_id")
-        //                .getAsString();
-        //        String userName = json.get("action_info").getAsJsonObject()
-        //                .get("user_name").getAsString();
-
         String deviceId = json.get("action_info").getAsJsonObject()
                 .get("device_id").getAsString();
         UserInfo userInfo = AuthenticationUtils.getUserInfoFromToken(authToken);
-        //        UserInfo userInfo = getUserInfoFromToken(authToken);
 
-        //        UserInfo userInfo = new UserInfo(Long.valueOf(userID), userName);
         // put it into the map
         UserSessionInfo info = new UserSessionInfo(authToken, deviceId,
                 userInfo.getUserId(), userInfo.getUserName());
@@ -351,20 +342,21 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
     }
 
     /**
-     * remove user form user-channel mapping
-     * when receiving a logout info from client
+     * remove user channel from mapping
      *
-     * @param json
-     * @param channel
+     * @param channel user channel
+     * @throws Exception
      */
-    private void doLogout(JsonObject json, Channel channel) throws Exception {
+    private void doLogout(Channel channel) throws Exception {
         ChannelManager.removeUserChannel(channel);
         channel.writeAndFlush("user logout");
         channel.writeAndFlush(new CloseWebSocketFrame());
     }
 
     /**
-     * @param userID
+     * notify user new info in all the active channel he possesses
+     *
+     * @param userID user to be notified
      * @throws Exception
      */
     private void doSync(long userID) throws Exception {
@@ -377,8 +369,6 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
         }
         BaseAction msg = new BaseAction(ActionType.ACTION_NEW_INFO);
         String request = GsonUtils.getGson().toJson(msg);
-        //        TextWebSocketFrame frame = new TextWebSocketFrame(request);
-        //        logger.info(uuid, "{} Channel for user:{}", channels.size(), userID);
         for (Channel channel : channels) {
             if (!channel.isOpen()) {
                 continue;

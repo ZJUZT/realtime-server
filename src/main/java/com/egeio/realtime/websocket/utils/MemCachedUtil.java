@@ -44,8 +44,8 @@ public class MemCachedUtil {
      * the channels may be connected to different real-time server node
      * so we have to store all the distinct node address for each user
      *
-     * @param userID
-     * @param realTimeNodeAddress
+     * @param userID              user id
+     * @param realTimeNodeAddress real-time server address
      */
     public synchronized static void writeMemCached(String userID,
             int expireTime, String realTimeNodeAddress) throws Exception {
@@ -60,16 +60,6 @@ public class MemCachedUtil {
                     GsonUtils.getGson().toJson(addresses));
         }
         else {
-            //            String value = String.valueOf(memClient.get(userID));
-            //            String[] addresses = value.split(" ");
-            //            for(String address:addresses){
-            //                if(address.equals(realTimeNodeAddress)){
-            //                    //already store the address before
-            //                    return;
-            //                }
-            //            }
-            //use space to split two real-time server address
-            //            memClient.append(userID," "+realTimeNodeAddress);
             String jsonObj = GsonUtils.getGson().toJson(memClient.get(userID));
             logger.info(uuid, "jsonObj:{}", jsonObj);
             Set<String> addresses = GsonUtils.getGson().fromJson(
@@ -83,9 +73,11 @@ public class MemCachedUtil {
     }
 
     /**
-     * @param userID
-     * @param expireTime
-     * @param realTimeNodeAddress
+     * when no active channels on this server, remove server address from memCached
+     *
+     * @param userID              user id
+     * @param expireTime          0 for stored forever
+     * @param realTimeNodeAddress real-time server address
      * @throws Exception
      */
     public synchronized static void deleteFromMemCached(String userID,

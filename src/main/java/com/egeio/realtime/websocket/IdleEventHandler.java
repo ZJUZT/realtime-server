@@ -28,7 +28,6 @@ public class IdleEventHandler extends ChannelHandlerAdapter {
             IdleStateEvent event = (IdleStateEvent) evt;
             if (event.state() == IdleState.WRITER_IDLE) {
                 // send ping message to client
-                //                LogUtils.logSessionInfo(logger,ctx.channel(),"Get ping message");
                 ctx.channel().writeAndFlush(
                         new TextWebSocketFrame(getPingMessage()));
             }

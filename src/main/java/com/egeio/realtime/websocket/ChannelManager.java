@@ -54,26 +54,23 @@ public class ChannelManager {
     /**
      * add user-channel into the mapping
      *
-     * @param info
-     * @param channel
+     * @param info    user session info
+     * @param channel user channel
      */
     public static void addUserChannel(UserSessionInfo info, Channel channel)
             throws Exception {
         long userID = info.getUserID();
         String deviceID = info.getDeviceID();
         if (userChannelMapping.get(userID) == null) {
-            ConcurrentHashMap<String, Channel> map = new ConcurrentHashMap<>();
-            userChannelMapping.put(userID, map);
+            userChannelMapping
+                    .put(userID, new ConcurrentHashMap<String, Channel>());
         }
         setUserSessionInfoInChannel(channel, info);
         userChannelMapping.get(userID).put(deviceID, channel);
 
-        //stored the real-time server info for each online user in cache
-
-        //        memClient.set(userID + "", 0, serverHost + ":" + serverPort);
+        //store the real-time server info for each online user in cache
         MemCachedUtil
                 .writeMemCached(userID + "", 0, serverHost + ":" + serverPort);
-        //TODO
         LogUtils.logSessionInfo(logger, channel,
                 "Added to the cache: user {} is on {}", userID,
                 serverHost + ":" + serverPort);
@@ -82,16 +79,13 @@ public class ChannelManager {
     /**
      * remover user-channel from mapping
      *
-     * @param channel
+     * @param channel user channel
      */
     public static void removeUserChannel(Channel channel) throws Exception {
         UserSessionInfo info = getUserSessionInfoFromChannel(channel);
         if (channel.attr(userSessionKey).get() == null) {
             return;
         }
-        //        if (userChannelMapping.size() == 0 && info==null) {
-        //            return;
-        //        }
         LogUtils.logSessionInfo(logger, channel,
                 "Try to remove user channel from mapping");
         ConcurrentHashMap<String, Channel> session = userChannelMapping
@@ -109,7 +103,6 @@ public class ChannelManager {
         if (userChannelMapping.get(info.getUserID()).isEmpty()) {
             userChannelMapping.remove(info.getUserID());
             //delete the real-time node entry for the user
-            //            memClient.delete(info.getUserID() + "");
             MemCachedUtil.deleteFromMemCached(info.getUserID() + "", 0,
                     serverHost + ":" + serverPort);
             LogUtils.logSessionInfo(logger, channel,

@@ -19,7 +19,7 @@ public class WebSocketServer {
     private final int port;
     private static Logger logger = LoggerFactory
             .getLogger(WebSocketServer.class);
-    private static MyUUID uuid;
+    private static MyUUID uuid= new MyUUID();
 
     //leave out ssl temporarily
     public WebSocketServer(int port) {
@@ -58,7 +58,6 @@ public class WebSocketServer {
             new WebSocketServer(port).run();
         }
         catch (Exception e) {
-            //            e.printStackTrace();
             logger.error(uuid, e, "failed to start the realTime server");
         }
     }
