@@ -10,6 +10,7 @@ import com.egeio.realtime.websocket.utils.MemCachedUtil;
 import io.netty.channel.Channel;
 import io.netty.util.AttributeKey;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -24,8 +25,8 @@ public class ChannelManager {
 
     private static final AttributeKey<UserSessionInfo> userSessionKey = AttributeKey
             .valueOf("userSessionInfo");
-    private static ConcurrentHashMap<Long, ConcurrentHashMap<String, Channel>> userChannelMapping = new ConcurrentHashMap<>();
-
+    //    private static ConcurrentHashMap<Long, ConcurrentHashMap<String, Channel>> userChannelMapping = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<Long, ArrayList<Channel>> userChannelMapping = new ConcurrentHashMap<>();
     //configuration the ip address and port for the server
     //which will be stored into memory cache
     private final static String serverHost = Config.getConfig()
@@ -60,13 +61,11 @@ public class ChannelManager {
     public static void addUserChannel(UserSessionInfo info, Channel channel)
             throws Exception {
         long userID = info.getUserID();
-        String deviceID = info.getDeviceID();
         if (userChannelMapping.get(userID) == null) {
-            userChannelMapping
-                    .put(userID, new ConcurrentHashMap<String, Channel>());
+            userChannelMapping.put(userID, new ArrayList<Channel>());
         }
         setUserSessionInfoInChannel(channel, info);
-        userChannelMapping.get(userID).put(deviceID, channel);
+        userChannelMapping.get(userID).add(channel);
 
         //store the real-time server info for each online user in cache
         MemCachedUtil
@@ -88,8 +87,7 @@ public class ChannelManager {
         }
         LogUtils.logSessionInfo(logger, channel,
                 "Try to remove user channel from mapping");
-        ConcurrentHashMap<String, Channel> session = userChannelMapping
-                .get(info.getUserID());
+        ArrayList<Channel> session = userChannelMapping.get(info.getUserID());
         LogUtils.logSessionInfo(logger, channel, "Current Map {}.",
                 userChannelMapping);
         if (session == null) {
@@ -99,7 +97,7 @@ public class ChannelManager {
         }
         LogUtils.logSessionInfo(logger, channel,
                 "channel removed from mapping");
-        userChannelMapping.get(info.getUserID()).remove(info.getDeviceID());
+        userChannelMapping.get(info.getUserID()).remove(channel);
         if (userChannelMapping.get(info.getUserID()).isEmpty()) {
             userChannelMapping.remove(info.getUserID());
             //delete the real-time node entry for the user
@@ -121,7 +119,7 @@ public class ChannelManager {
 
     public static Collection<Channel> getChannelByUserID(long userID) {
         if (userChannelMapping.get(userID) != null) {
-            return userChannelMapping.get(userID).values();
+            return userChannelMapping.get(userID);
         }
         return null;
     }

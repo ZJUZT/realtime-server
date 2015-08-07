@@ -2,8 +2,7 @@ package com.egeio.realtime.websocket.model;
 
 import com.egeio.core.log.MyUUID;
 import com.google.gson.annotations.SerializedName;
-
-import java.util.Date;
+import io.netty.channel.Channel;
 
 /**
  * Created by think on 2015/7/31.
@@ -12,23 +11,19 @@ import java.util.Date;
 public class UserSessionInfo {
     private transient String token;
     private transient MyUUID sessionID;
-
-    @SerializedName("device_id") private String deviceID;
+    private Channel channel;
 
     @SerializedName("user_id") private long userID;
 
     @SerializedName("user_name") private String userName;
 
-    @SerializedName("connect_time") private Date connectTime;
-
-    public UserSessionInfo(String token, String deviceID, long userID,
-            String userName) {
+    public UserSessionInfo(String token, long userID, String userName,
+            Channel channel) {
         //user userID-deviceID in UUID
-        this.sessionID = new MyUUID(String.format("%s-%s", userID, deviceID));
+        this.sessionID = new MyUUID(String.format("%s-%s", userID, channel));
         this.token = token;
-        this.deviceID = deviceID;
         this.userID = userID;
-        this.connectTime = new Date();
+        this.userName = userName;
     }
 
     public MyUUID getSessionID() {
@@ -37,10 +32,6 @@ public class UserSessionInfo {
 
     public String getToken() {
         return token;
-    }
-
-    public String getDeviceID() {
-        return deviceID;
     }
 
     public long getUserID() {

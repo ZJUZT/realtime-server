@@ -7,7 +7,6 @@ import com.egeio.core.log.MyUUID;
 import com.egeio.core.monitor.MonitorClient;
 import com.egeio.core.utils.GsonUtils;
 import com.egeio.realtime.websocket.model.*;
-import com.egeio.realtime.websocket.utils.AuthenticationUtils;
 import com.egeio.realtime.websocket.utils.LogUtils;
 import com.egeio.realtime.websocket.utils.NetworkUtils;
 import com.google.gson.JsonObject;
@@ -127,7 +126,7 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
      */
     @Override public void channelInactive(ChannelHandlerContext ctx)
             throws Exception {
-        LogUtils.logSessionInfo(logger, ctx.channel(), "channel inactive");
+        //        LogUtils.logSessionInfo(logger, ctx.channel(), "channel inactive");
         ChannelManager.removeUserChannel(ctx.channel());
         super.channelInactive(ctx);
     }
@@ -140,7 +139,7 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
      */
     @Override public void channelUnregistered(ChannelHandlerContext ctx)
             throws Exception {
-        LogUtils.logSessionInfo(logger, ctx.channel(), "channel unregistered");
+        //        LogUtils.logSessionInfo(logger, ctx.channel(), "channel unregistered");
         ChannelManager.removeUserChannel(ctx.channel());
         super.channelUnregistered(ctx);
     }
@@ -326,19 +325,26 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
      * @throws Exception
      */
     private void doLogin(JsonObject json, Channel channel) throws Exception {
-        String authToken = json.get("action_info").getAsJsonObject()
-                .get("auth_token").getAsString();
+        //        String authToken = json.get("action_info").getAsJsonObject()
+        //                .get("auth_token").getAsString();
 
-        String deviceId = json.get("action_info").getAsJsonObject()
-                .get("device_id").getAsString();
-        UserInfo userInfo = AuthenticationUtils.getUserInfoFromToken(authToken);
-
+        String userID = json.get("action_info").getAsJsonObject()
+                .get("auth_token").getAsJsonObject().get("userId")
+                .getAsString();
+        String userName = json.get("action_info").getAsJsonObject()
+                .get("auth_token").getAsJsonObject().get("userName")
+                .getAsString();
+        //        UserInfo userInfo = AuthenticationUtils.getUserInfoFromToken(authToken);
         // put it into the map
-        UserSessionInfo info = new UserSessionInfo(authToken, deviceId,
-                userInfo.getUserId(), userInfo.getUserName());
+        //skip authentication for now
+        UserInfo userInfo = new UserInfo(Long.valueOf(userID), userName);
+        //        if(userInfo!=null){
+        UserSessionInfo info = new UserSessionInfo(null, userInfo.getUserId(),
+                userInfo.getUserName(), channel);
         ChannelManager.addUserChannel(info, channel);
         LogUtils.logSessionInfo(logger, channel, "Add user channel into map {}",
                 info.getUserID());
+        //        }
     }
 
     /**
