@@ -5,8 +5,6 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpResponseEncoder;
-import io.netty.handler.timeout.IdleStateHandler;
-import com.egeio.realtime.websocket.utils.HeartbeatsUtils;
 
 /**
  * Created by think on 2015/7/31.
@@ -24,11 +22,6 @@ public class WebSocketInitializer extends ChannelInitializer<SocketChannel> {
         socketChannel.pipeline().addLast(new HttpRequestDecoder());
         socketChannel.pipeline().addLast(new HttpResponseEncoder());
         socketChannel.pipeline().addLast(new HttpObjectAggregator(65536));
-        socketChannel.pipeline().addLast(
-                new IdleStateHandler(HeartbeatsUtils.getMaxReaderIdleTime(),
-                        HeartbeatsUtils.getMaxWriterIdleTime(),
-                        HeartbeatsUtils.getMaxAllIdleTime()));
-        socketChannel.pipeline().addLast(new IdleEventHandler());
         socketChannel.pipeline().addLast(new WebSocketHandler(port));
     }
 }

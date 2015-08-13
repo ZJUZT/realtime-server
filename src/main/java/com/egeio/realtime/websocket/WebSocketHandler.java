@@ -334,7 +334,7 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
         String userName = json.get("action_info").getAsJsonObject()
                 .get("auth_token").getAsJsonObject().get("userName")
                 .getAsString();
-        //        UserInfo userInfo = AuthenticationUtils.getUserInfoFromToken(authToken);
+//        UserInfo userInfo = AuthenticationUtils.getUserInfoFromToken(authToken);
         // put it into the map
         //skip authentication for now
         UserInfo userInfo = new UserInfo(Long.valueOf(userID), userName);
@@ -342,9 +342,8 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
         UserSessionInfo info = new UserSessionInfo(null, userInfo.getUserId(),
                 userInfo.getUserName(), channel);
         ChannelManager.addUserChannel(info, channel);
-        LogUtils.logSessionInfo(logger, channel, "Add user channel into map {}",
-                info.getUserID());
-        //        }
+        LogUtils.logSessionInfo(logger, channel,
+                "Add user {} channel into mapping", info.getUserID());
     }
 
     /**

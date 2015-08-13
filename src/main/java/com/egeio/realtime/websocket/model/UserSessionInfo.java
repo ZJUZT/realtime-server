@@ -11,7 +11,6 @@ import io.netty.channel.Channel;
 public class UserSessionInfo {
     private transient String token;
     private transient MyUUID sessionID;
-    private Channel channel;
 
     @SerializedName("user_id") private long userID;
 
@@ -36,6 +35,10 @@ public class UserSessionInfo {
 
     public long getUserID() {
         return userID;
+    }
+
+    public String getUserName(){
+        return userName;
     }
 
 }

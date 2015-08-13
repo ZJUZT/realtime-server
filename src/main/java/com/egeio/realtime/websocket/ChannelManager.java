@@ -88,8 +88,6 @@ public class ChannelManager {
         LogUtils.logSessionInfo(logger, channel,
                 "Try to remove user channel from mapping");
         ArrayList<Channel> session = userChannelMapping.get(info.getUserID());
-        LogUtils.logSessionInfo(logger, channel, "Current Map {}.",
-                userChannelMapping);
         if (session == null) {
             LogUtils.logSessionInfo(logger, channel,
                     "cannot find user channel in mapping");

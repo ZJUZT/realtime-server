@@ -52,7 +52,7 @@ public class WebSocketServer {
             port = Integer.parseInt((args[0]));
         }
         else {
-            port = 8090;
+            port = 8080;
         }
         try {
             new WebSocketServer(port).run();

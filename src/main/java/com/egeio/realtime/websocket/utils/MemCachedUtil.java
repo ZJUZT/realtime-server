@@ -49,27 +49,21 @@ public class MemCachedUtil {
      */
     public synchronized static void writeMemCached(String userID,
             int expireTime, String realTimeNodeAddress) throws Exception {
-        //        logger.info(uuid, "From memcached:{}", memClient.get(userID));
+        Set<String> addresses;
         if (memClient.get(userID) == null) {
-            //            memClient.set(userID,expireTime,realTimeNodeAddress);
-            Set<String> addresses = new HashSet<>();
-            addresses.add(realTimeNodeAddress);
-            memClient.set(userID, expireTime,
-                    GsonUtils.getGson().toJson(addresses));
-            logger.info(uuid, "jsonObj before storing into cache:{}",
-                    GsonUtils.getGson().toJson(addresses));
+            addresses = new HashSet<>();
         }
         else {
             String jsonObj = GsonUtils.getGson().toJson(memClient.get(userID));
             logger.info(uuid, "jsonObj:{}", jsonObj);
-            Set<String> addresses = GsonUtils.getGson().fromJson(
+            addresses = GsonUtils.getGson().fromJson(
                     jsonObj.substring(1, jsonObj.length() - 1)
                             .replace("\\", ""), new TypeToken<Set<String>>() {
                     }.getType());
-            addresses.add(realTimeNodeAddress);
-            memClient.set(userID, expireTime,
-                    GsonUtils.getGson().toJson(addresses));
         }
+        addresses.add(realTimeNodeAddress);
+        memClient.set(userID, expireTime,
+                GsonUtils.getGson().toJson(addresses));
     }
 
     /**
@@ -88,7 +82,8 @@ public class MemCachedUtil {
         }
 
         if (memClient.get(userID) == null) {
-            logger.info(uuid, "Can't find entry in cache for user:{}", userID);
+            logger.info(uuid, "Can't find real-time server in cache for user:{}", userID);
+            return;
         }
         else {
             String jsonObj = GsonUtils.getGson().toJson(memClient.get(userID));
