@@ -9,7 +9,6 @@ import com.egeio.realtime.websocket.exception.NeedAuthException;
 import com.egeio.realtime.websocket.exception.WebException;
 import com.egeio.realtime.websocket.model.UserInfo;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonSyntaxException;
 import org.dom4j.Element;
 
 import java.io.IOException;
@@ -62,7 +61,7 @@ public class AuthenticationUtils {
     }
 
     public static UserInfo getUserInfoFromToken(String token)
-            throws JsonSyntaxException, Exception {
+            throws Exception {
         UserInfo userInfo = null;
         String url = String.format("%s://%s%s", PROTOCOL, HOST, API);
 
@@ -96,9 +95,6 @@ public class AuthenticationUtils {
         catch (WebException e) {
             logger.error(uuid, e, "failed to get user info from token");
             throw new NeedAuthException();
-        }
-        catch (IOException e) {
-            logger.error(uuid, e, "failed to get user info from token");
         }
         return userInfo;
     }

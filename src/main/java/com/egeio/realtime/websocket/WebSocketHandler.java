@@ -7,8 +7,11 @@ import com.egeio.core.log.MyUUID;
 import com.egeio.core.monitor.MonitorClient;
 import com.egeio.core.utils.GsonUtils;
 import com.egeio.realtime.websocket.model.*;
+import com.egeio.realtime.websocket.utils.AuthenticationUtils;
 import com.egeio.realtime.websocket.utils.LogUtils;
 import com.egeio.realtime.websocket.utils.NetworkUtils;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -35,6 +38,7 @@ import java.util.concurrent.TimeUnit;
 
 import static io.netty.handler.codec.http.HttpMethod.GET;
 import static io.netty.handler.codec.http.HttpMethod.POST;
+import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
@@ -181,19 +185,26 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
 
             HttpPostRequestDecoder decoder = new HttpPostRequestDecoder(
                     new DefaultHttpDataFactory(false), request);
-            InterfaceHttpData postData = decoder.getBodyHttpData("userID");
+            InterfaceHttpData postData = decoder.getBodyHttpData("data");
             logger.info(uuid, "HTTP request content:{}", postData);
-            String userID = "";
+
+            if(postData==null){
+                logger.info(uuid,"No data in this http request found");
+                sendHttpResponse(channelHandlerContext,
+                        new DefaultFullHttpResponse(HTTP_1_1, BAD_REQUEST));
+                return;
+            }
+            String dataFromProcessor = "";
             if (postData.getHttpDataType()
                     == InterfaceHttpData.HttpDataType.Attribute) {
                 Attribute attribute = (Attribute) postData;
-                userID = attribute.getValue();
+                dataFromProcessor = attribute.getValue();
             }
 
-            if (userID != null && !userID.equals("")) {
+            if (dataFromProcessor != null && !dataFromProcessor.equals("")) {
                 sendHttpResponse(channelHandlerContext,
                         new DefaultFullHttpResponse(HTTP_1_1, OK));
-                doSync(Long.valueOf(userID));
+                doSync(dataFromProcessor);
             }
             else {
                 logger.info(uuid, "Can't get userID from HTTP request");
@@ -290,7 +301,7 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
             }
 
             //parse json
-            //{action:"login",action_info:{authToken:...,deviceId:...}}
+            //{action:"login",action_info:{authToken:...}}
             if (reqJson.get("action").getAsString()
                     .equalsIgnoreCase(ActionType.ACTION_LOGIN)) {
                 doLogin(reqJson, channel);
@@ -325,25 +336,16 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
      * @throws Exception
      */
     private void doLogin(JsonObject json, Channel channel) throws Exception {
-        //        String authToken = json.get("action_info").getAsJsonObject()
-        //                .get("auth_token").getAsString();
-
-        String userID = json.get("action_info").getAsJsonObject()
-                .get("auth_token").getAsJsonObject().get("userId")
-                .getAsString();
-        String userName = json.get("action_info").getAsJsonObject()
-                .get("auth_token").getAsJsonObject().get("userName")
-                .getAsString();
-//        UserInfo userInfo = AuthenticationUtils.getUserInfoFromToken(authToken);
-        // put it into the map
-        //skip authentication for now
-        UserInfo userInfo = new UserInfo(Long.valueOf(userID), userName);
-        //        if(userInfo!=null){
-        UserSessionInfo info = new UserSessionInfo(null, userInfo.getUserId(),
-                userInfo.getUserName(), channel);
-        ChannelManager.addUserChannel(info, channel);
-        LogUtils.logSessionInfo(logger, channel,
-                "Add user {} channel into mapping", info.getUserID());
+        String authToken = json.get("action_info").getAsJsonObject()
+                .get("auth_token").getAsString();
+        UserInfo userInfo = AuthenticationUtils.getUserInfoFromToken(authToken);
+        if (userInfo != null) {
+            UserSessionInfo info = new UserSessionInfo(authToken,
+                    userInfo.getUserId(), userInfo.getUserName(), channel);
+            ChannelManager.addUserChannel(info, channel);
+            LogUtils.logSessionInfo(logger, channel,
+                    "Add user {} channel into mapping", info.getUserID());
+        }
     }
 
     /**
@@ -361,24 +363,41 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
     /**
      * notify user new info in all the active channel he possesses
      *
-     * @param userID user to be notified
+     * @param jsonStr data from processor to be parsed
      * @throws Exception
      */
-    private void doSync(long userID) throws Exception {
-        Collection<Channel> channels = ChannelManager
-                .getChannelByUserID(userID);
-        ChannelManager.displayUserChannelMapping();
-        if (channels == null) {
-            logger.info(uuid, "No active channels for user:{}", userID);
-            return;
-        }
-        BaseAction msg = new BaseAction(ActionType.ACTION_NEW_INFO);
-        String request = GsonUtils.getGson().toJson(msg);
-        for (Channel channel : channels) {
-            if (!channel.isOpen()) {
-                continue;
+    private void doSync(String jsonStr) throws Exception {
+        JsonObject jsonObject= GsonUtils.getGson().fromJson(jsonStr, JsonObject.class);
+        //get users to be notified
+//        if(jsonObject.get("jobType")==null||!jsonObject.get("jobType").getAsString().equals("Realtime_job")){
+        //            return;
+        //        }
+        JsonArray userList = jsonObject.get("user_id").getAsJsonArray();
+        //get the content to send to each user
+        jsonObject.remove("user_id");
+
+        for(JsonElement userID:userList){
+            Collection<Channel> channels = ChannelManager
+                    .getChannelByUserID(userID.getAsLong());
+            ChannelManager.displayUserChannelMapping();
+            if (channels == null) {
+                logger.info(uuid, "No active channels for user:{}", userID);
+                return;
             }
-            channel.writeAndFlush(new TextWebSocketFrame(request));
+            BaseAction msg = new BaseAction(ActionType.ACTION_NEW_INFO,
+                    GsonUtils.getGson().toJson(jsonObject));
+
+            String request = GsonUtils.getGson().toJson(msg);
+            JsonObject obj = GsonUtils.getGson().fromJson(request,JsonObject.class);
+            logger.info(uuid,"action_info:{}",obj.get("action_info"));
+            logger.info(uuid,"SyncInfo:{}",request);
+            for (Channel channel : channels) {
+                if (!channel.isOpen()) {
+                    continue;
+                }
+                channel.writeAndFlush(new TextWebSocketFrame(request));
+            }
         }
+
     }
 }

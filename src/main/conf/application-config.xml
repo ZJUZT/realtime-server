@@ -31,8 +31,10 @@
   
   <auth_endpoint>
   	<protocol>http</protocol>
-  	<host>218.244.149.168</host>
-  	<api>/api/v1/user/account_info</api>
+  	<!--<host>218.244.149.168</host>-->
+  	<!--<api>/api/v1/user/account_info</api>-->
+    <host>localhost</host>
+    <api>/auth/get_user_for_realtime</api>
   </auth_endpoint>
   
   <monitor>

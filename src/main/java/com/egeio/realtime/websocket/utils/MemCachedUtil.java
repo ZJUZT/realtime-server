@@ -55,7 +55,7 @@ public class MemCachedUtil {
         }
         else {
             String jsonObj = GsonUtils.getGson().toJson(memClient.get(userID));
-            logger.info(uuid, "jsonObj:{}", jsonObj);
+//            logger.info(uuid, "jsonObj:{}", jsonObj);
             addresses = GsonUtils.getGson().fromJson(
                     jsonObj.substring(1, jsonObj.length() - 1)
                             .replace("\\", ""), new TypeToken<Set<String>>() {
