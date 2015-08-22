@@ -23,20 +23,6 @@ public class BaseResponse {
         this.statusCode = statusCode;
     }
 
-    public BaseResponse(String action, int statusCode, Object actionInfo) {
-        this.action = action;
-        this.statusCode = statusCode;
-        this.actionInfo = actionInfo;
-    }
-
-    public void setAction(String action) {
-        this.action = action;
-    }
-
-    public void setActionInfo(Object actionInfo) {
-        this.actionInfo = actionInfo;
-    }
-
     public void setStatusCode(int code) {
         this.statusCode = code;
     }

@@ -10,6 +10,7 @@ import com.egeio.realtime.websocket.model.*;
 import com.egeio.realtime.websocket.utils.AuthenticationUtils;
 import com.egeio.realtime.websocket.utils.LogUtils;
 import com.egeio.realtime.websocket.utils.NetworkUtils;
+import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -188,8 +189,8 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
             InterfaceHttpData postData = decoder.getBodyHttpData("data");
             logger.info(uuid, "HTTP request content:{}", postData);
 
-            if(postData==null){
-                logger.info(uuid,"No data in this http request found");
+            if (postData == null) {
+                logger.info(uuid, "No data in this http request found");
                 sendHttpResponse(channelHandlerContext,
                         new DefaultFullHttpResponse(HTTP_1_1, BAD_REQUEST));
                 return;
@@ -260,6 +261,7 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
      */
     private void handleWebSocket(ChannelHandlerContext channelHandlerContext,
             WebSocketFrame frame) throws Exception {
+        Gson gson = GsonUtils.getGson();
         Channel channel = channelHandlerContext.channel();
         if (frame instanceof CloseWebSocketFrame) {
             //user closing channel
@@ -287,15 +289,14 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
         String req = ((TextWebSocketFrame) frame).text();
         LogUtils.logSessionInfo(logger, channel, "channel received {}", req);
         String res;
-        JsonObject reqJson = GsonUtils.getGson()
-                .fromJson(req, JsonObject.class);
+        JsonObject reqJson = gson.fromJson(req, JsonObject.class);
         BaseResponse baseRes = new BaseResponse(
                 reqJson.get("action").getAsString(), OK_STATUS_CODE);
         try {
             if (reqJson.get("action") == null) {
                 baseRes.setStatusCode(FAILED_STATUS_CODE);
                 baseRes.setErrorMessage("No action to be taken");
-                res = GsonUtils.getGson().toJson(baseRes);
+                res = gson.toJson(baseRes);
                 channel.writeAndFlush(new TextWebSocketFrame(res));
                 return;
             }
@@ -321,7 +322,7 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
             baseRes.setStatusCode(FAILED_STATUS_CODE);
         }
 
-        res = GsonUtils.getGson().toJson(baseRes);
+        res = gson.toJson(baseRes);
         if (res != null) {
             channel.writeAndFlush(new TextWebSocketFrame(res));
         }
@@ -367,16 +368,18 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
      * @throws Exception
      */
     private void doSync(String jsonStr) throws Exception {
-        JsonObject jsonObject= GsonUtils.getGson().fromJson(jsonStr, JsonObject.class);
+        Gson gson = GsonUtils.getGson();
+        JsonObject jsonObject = gson.fromJson(jsonStr, JsonObject.class);
         //get users to be notified
-//        if(jsonObject.get("jobType")==null||!jsonObject.get("jobType").getAsString().equals("Realtime_job")){
-        //            return;
-        //        }
+        if (jsonObject.get("jobType") == null || !jsonObject.get("jobType")
+                .getAsString().equals("Realtime_job")) {
+            return;
+        }
         JsonArray userList = jsonObject.get("user_id").getAsJsonArray();
         //get the content to send to each user
         jsonObject.remove("user_id");
 
-        for(JsonElement userID:userList){
+        for (JsonElement userID : userList) {
             Collection<Channel> channels = ChannelManager
                     .getChannelByUserID(userID.getAsLong());
             ChannelManager.displayUserChannelMapping();
@@ -384,13 +387,18 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
                 logger.info(uuid, "No active channels for user:{}", userID);
                 return;
             }
-            BaseAction msg = new BaseAction(ActionType.ACTION_NEW_INFO,
-                    GsonUtils.getGson().toJson(jsonObject));
+//            BaseAction msg = new BaseAction(ActionType.ACTION_NEW_INFO,
+//                    gson.toJson(jsonObject));
 
-            String request = GsonUtils.getGson().toJson(msg);
-            JsonObject obj = GsonUtils.getGson().fromJson(request,JsonObject.class);
-            logger.info(uuid,"action_info:{}",obj.get("action_info"));
-            logger.info(uuid,"SyncInfo:{}",request);
+            JsonObject msg = new JsonObject();
+            msg.add("action",gson.fromJson(ActionType.ACTION_NEW_INFO,
+                    JsonElement.class));
+            msg.add("action_info",jsonObject);
+
+            String request = gson.toJson(msg);
+            JsonObject obj = gson.fromJson(request, JsonObject.class);
+            logger.info(uuid, "action_info:{}", obj.get("action_info"));
+            logger.info(uuid, "SyncInfo:{}", request);
             for (Channel channel : channels) {
                 if (!channel.isOpen()) {
                     continue;

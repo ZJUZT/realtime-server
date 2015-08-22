@@ -11,16 +11,9 @@ public class BaseAction {
 
     @SerializedName("action_info") protected Object actionInfo;
 
-    public BaseAction(String action) {
-        this.action = action;
-    }
-
     public BaseAction(String action, Object info) {
         this.action = action;
         this.actionInfo = info;
     }
 
-    public Object getActionInfo() {
-        return actionInfo;
-    }
 }

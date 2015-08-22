@@ -8,11 +8,11 @@
     <max_queue>60000</max_queue>
   </web_client>
   
-  <ssl>
-  	<enabled>false</enabled>
-  	<cert_path>/Users/rogerlai/Documents/certs/server.crt</cert_path>
-  	<key_path>/Users/rogerlai/Documents/certs/myrsakey_pcks8</key_path>
-  </ssl>
+  <!--<ssl>-->
+  	<!--<enabled>false</enabled>-->
+  	<!--<cert_path>/Users/rogerlai/Documents/certs/server.crt</cert_path>-->
+  	<!--<key_path>/Users/rogerlai/Documents/certs/myrsakey_pcks8</key_path>-->
+  <!--</ssl>-->
   
   <hbase>
     <hosts>hadoop.master,hadoop.slave</hosts>
@@ -33,8 +33,8 @@
   	<protocol>http</protocol>
   	<!--<host>218.244.149.168</host>-->
   	<!--<api>/api/v1/user/account_info</api>-->
-    <host>localhost</host>
-    <api>/auth/get_user_for_realtime</api>
+    <host>121.40.237.99</host>
+    <api>/api/get_user_for_realtime</api>
   </auth_endpoint>
   
   <monitor>

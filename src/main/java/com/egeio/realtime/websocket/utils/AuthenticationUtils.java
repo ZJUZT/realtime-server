@@ -67,7 +67,7 @@ public class AuthenticationUtils {
 
         try {
             String response = webClient.doGet(url, token);
-
+            logger.info(uuid,"url:{}",url);
             logger.info(uuid, "get response from authentication server: {}",
                     response);
             if (response == null) {
