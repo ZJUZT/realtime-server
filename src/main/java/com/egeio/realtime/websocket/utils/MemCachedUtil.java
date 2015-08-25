@@ -6,6 +6,7 @@ import com.egeio.core.log.LoggerFactory;
 import com.egeio.core.log.MyUUID;
 import com.egeio.core.utils.GsonUtils;
 import com.egeio.realtime.websocket.ChannelManager;
+import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import net.spy.memcached.AddrUtil;
 import net.spy.memcached.MemcachedClient;
@@ -55,15 +56,15 @@ public class MemCachedUtil {
         }
         else {
             String jsonObj = GsonUtils.getGson().toJson(memClient.get(userID));
-//            logger.info(uuid, "jsonObj:{}", jsonObj);
+            //            logger.info(uuid, "jsonObj:{}", jsonObj);
             addresses = GsonUtils.getGson().fromJson(
                     jsonObj.substring(1, jsonObj.length() - 1)
                             .replace("\\", ""), new TypeToken<Set<String>>() {
                     }.getType());
         }
         addresses.add(realTimeNodeAddress);
-        memClient.set(userID, expireTime,
-                GsonUtils.getGson().toJson(addresses));
+        memClient
+                .set(userID, expireTime, GsonUtils.getGson().toJson(addresses));
     }
 
     /**
@@ -82,13 +83,15 @@ public class MemCachedUtil {
         }
 
         if (memClient.get(userID) == null) {
-            logger.info(uuid, "Can't find real-time server in cache for user:{}", userID);
+            logger.info(uuid,
+                    "Can't find real-time server in cache for user:{}", userID);
             return;
         }
         else {
-            String jsonObj = GsonUtils.getGson().toJson(memClient.get(userID));
+            Gson gson = GsonUtils.getGson();
+            String jsonObj = gson.toJson(memClient.get(userID));
             //delete "\" and quotation marks embracing the json object
-            Set<String> addresses = GsonUtils.getGson().fromJson(
+            Set<String> addresses = gson.fromJson(
                     jsonObj.substring(1, jsonObj.length() - 1)
                             .replace("\\", ""), new TypeToken<Set<String>>() {
                     }.getType());

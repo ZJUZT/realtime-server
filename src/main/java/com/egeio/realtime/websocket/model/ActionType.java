@@ -7,6 +7,5 @@ package com.egeio.realtime.websocket.model;
 public class ActionType {
     public static final String ACTION_LOGIN = "login";
     public static final String ACTION_LOGOUT = "logout";
-    public static final String ACTION_PING = "ping";
     public static final String ACTION_NEW_INFO = "new_info";
 }

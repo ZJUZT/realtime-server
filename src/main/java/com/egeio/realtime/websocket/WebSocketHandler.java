@@ -10,6 +10,7 @@ import com.egeio.realtime.websocket.model.*;
 import com.egeio.realtime.websocket.utils.AuthenticationUtils;
 import com.egeio.realtime.websocket.utils.LogUtils;
 import com.egeio.realtime.websocket.utils.NetworkUtils;
+import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -370,14 +371,25 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
     private void doSync(String jsonStr) throws Exception {
         Gson gson = GsonUtils.getGson();
         JsonObject jsonObject = gson.fromJson(jsonStr, JsonObject.class);
-        //get users to be notified
+        //is realtime notification or not
         if (jsonObject.get("jobType") == null || !jsonObject.get("jobType")
                 .getAsString().equals("Realtime_job")) {
             return;
         }
         JsonArray userList = jsonObject.get("user_id").getAsJsonArray();
+
         //get the content to send to each user
         jsonObject.remove("user_id");
+
+        //审阅邀请、审阅评论、评论消息特殊处理
+        HashMap<Long, Object> userTypeMap = null;
+        if (jsonObject.get("user_type_map") != null) {
+            userTypeMap = gson.fromJson(jsonObject.get("user_type_map"),
+                    new TypeToken<Map<Long, Object>>() {
+                    }.getType());
+            jsonObject.remove("user_type_map");
+        }
+
 
         for (JsonElement userID : userList) {
             Collection<Channel> channels = ChannelManager
@@ -387,18 +399,18 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
                 logger.info(uuid, "No active channels for user:{}", userID);
                 return;
             }
-//            BaseAction msg = new BaseAction(ActionType.ACTION_NEW_INFO,
-//                    gson.toJson(jsonObject));
-
             JsonObject msg = new JsonObject();
-            msg.add("action",gson.fromJson(ActionType.ACTION_NEW_INFO,
+            msg.add("action", gson.fromJson(ActionType.ACTION_NEW_INFO,
                     JsonElement.class));
-            msg.add("action_info",jsonObject);
+            if (userTypeMap != null) {
+                Object userType = userTypeMap.get(userID.getAsLong());
+                jsonObject.add("user_type",
+                        gson.fromJson(String.valueOf(userType),
+                                JsonElement.class));
+            }
+            msg.add("action_info", jsonObject);
 
             String request = gson.toJson(msg);
-            JsonObject obj = gson.fromJson(request, JsonObject.class);
-            logger.info(uuid, "action_info:{}", obj.get("action_info"));
-            logger.info(uuid, "SyncInfo:{}", request);
             for (Channel channel : channels) {
                 if (!channel.isOpen()) {
                     continue;
