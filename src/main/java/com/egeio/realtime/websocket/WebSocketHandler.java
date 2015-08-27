@@ -90,7 +90,7 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
         this.port = port;
     }
 
-    //send moi
+    //send monitor information
     private static void sendMonitorInfo() {
         Map<String, String> tags = new HashMap<>();
 

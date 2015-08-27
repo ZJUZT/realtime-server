@@ -87,22 +87,21 @@ public class MemCachedUtil {
                     "Can't find real-time server in cache for user:{}", userID);
             return;
         }
+
+        Gson gson = GsonUtils.getGson();
+        String jsonObj = gson.toJson(memClient.get(userID));
+        //delete "\" and quotation marks embracing the json object
+        Set<String> addresses = gson.fromJson(
+                jsonObj.substring(1, jsonObj.length() - 1).replace("\\", ""),
+                new TypeToken<Set<String>>() {
+                }.getType());
+        addresses.remove(realTimeNodeAddress);
+        if (addresses.isEmpty()) {
+            memClient.delete(userID);
+        }
         else {
-            Gson gson = GsonUtils.getGson();
-            String jsonObj = gson.toJson(memClient.get(userID));
-            //delete "\" and quotation marks embracing the json object
-            Set<String> addresses = gson.fromJson(
-                    jsonObj.substring(1, jsonObj.length() - 1)
-                            .replace("\\", ""), new TypeToken<Set<String>>() {
-                    }.getType());
-            addresses.remove(realTimeNodeAddress);
-            if (addresses.isEmpty()) {
-                memClient.delete(userID);
-            }
-            else {
-                memClient.set(userID, expireTime,
-                        GsonUtils.getGson().toJson(addresses));
-            }
+            memClient.set(userID, expireTime,
+                    GsonUtils.getGson().toJson(addresses));
         }
     }
 }
