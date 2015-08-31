@@ -9,6 +9,8 @@ import com.egeio.realtime.websocket.ChannelManager;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import net.spy.memcached.AddrUtil;
+import net.spy.memcached.CASResponse;
+import net.spy.memcached.CASValue;
 import net.spy.memcached.MemcachedClient;
 
 import java.io.IOException;
@@ -50,58 +52,68 @@ public class MemCachedUtil {
      */
     public synchronized static void writeMemCached(String userID,
             int expireTime, String realTimeNodeAddress) throws Exception {
+        Gson gson = GsonUtils.getGson();
         Set<String> addresses;
-        if (memClient.get(userID) == null) {
+        //make sure key exists
+        CASValue casValue = memClient.gets(userID);
+        if (casValue == null) {
             addresses = new HashSet<>();
+            memClient.set(userID, expireTime, gson.toJson(addresses));
+            casValue = memClient.gets(userID);
         }
-        else {
-            String jsonObj = GsonUtils.getGson().toJson(memClient.get(userID));
-            //            logger.info(uuid, "jsonObj:{}", jsonObj);
-            addresses = GsonUtils.getGson().fromJson(
-                    jsonObj.substring(1, jsonObj.length() - 1)
-                            .replace("\\", ""), new TypeToken<Set<String>>() {
-                    }.getType());
-        }
+
+        String jsonObj = gson.toJson(casValue.getValue());
+        addresses = gson.fromJson(
+                jsonObj.substring(1, jsonObj.length() - 1).replace("\\", ""),
+                new TypeToken<Set<String>>() {
+                }.getType());
+
         addresses.add(realTimeNodeAddress);
-        memClient
-                .set(userID, expireTime, GsonUtils.getGson().toJson(addresses));
+        CASResponse casResponse = memClient
+                .cas(userID, casValue.getCas(), gson.toJson(addresses));
+        if (casResponse == CASResponse.OK) {
+            return;
+        }
+        Thread.sleep(50);
+        writeMemCached(userID, expireTime, realTimeNodeAddress);
     }
 
     /**
      * when no active channels on this server, remove server address from memCached
      *
      * @param userID              user id
-     * @param expireTime          0 for stored forever
      * @param realTimeNodeAddress real-time server address
      * @throws Exception
      */
     public synchronized static void deleteFromMemCached(String userID,
-            int expireTime, String realTimeNodeAddress) throws Exception {
+            String realTimeNodeAddress) throws Exception {
         if (ChannelManager.getChannelByUserID(Long.valueOf(userID)) != null) {
             //still has active channels, no need deleting node node address from cache
             return;
         }
 
-        if (memClient.get(userID) == null) {
+        CASValue casValue = memClient.gets(userID);
+
+        if (casValue == null) {
             logger.info(uuid,
                     "Can't find real-time server in cache for user:{}", userID);
             return;
         }
 
         Gson gson = GsonUtils.getGson();
-        String jsonObj = gson.toJson(memClient.get(userID));
+        String jsonObj = gson.toJson(casValue.getValue());
         //delete "\" and quotation marks embracing the json object
         Set<String> addresses = gson.fromJson(
                 jsonObj.substring(1, jsonObj.length() - 1).replace("\\", ""),
                 new TypeToken<Set<String>>() {
                 }.getType());
         addresses.remove(realTimeNodeAddress);
-        if (addresses.isEmpty()) {
-            memClient.delete(userID);
+        CASResponse casResponse = memClient
+                .cas(userID, casValue.getCas(), gson.toJson(addresses));
+        if (casResponse == CASResponse.OK) {
+            return;
         }
-        else {
-            memClient.set(userID, expireTime,
-                    GsonUtils.getGson().toJson(addresses));
-        }
+        Thread.sleep(50);
+        deleteFromMemCached(userID,realTimeNodeAddress);
     }
 }

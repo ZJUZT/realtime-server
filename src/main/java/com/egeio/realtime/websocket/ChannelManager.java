@@ -68,11 +68,10 @@ public class ChannelManager {
         userChannelMapping.get(userID).add(channel);
 
         //store the real-time server info for each online user in cache
-        MemCachedUtil
-                .writeMemCached(userID + "", 0, serverHost + ":" + serverPort);
+        String address = String.format("%s:%s", serverHost, serverPort);
+        MemCachedUtil.writeMemCached(userID + "", 0, address);
         LogUtils.logSessionInfo(logger, channel,
-                "Added to the cache: user {} is on {}", userID,
-                serverHost + ":" + serverPort);
+                "Added to the cache: user {} is on {}", userID, address);
     }
 
     /**
@@ -99,8 +98,8 @@ public class ChannelManager {
         if (userChannelMapping.get(info.getUserID()).isEmpty()) {
             userChannelMapping.remove(info.getUserID());
             //delete the real-time node entry for the user
-            MemCachedUtil.deleteFromMemCached(info.getUserID() + "", 0,
-                    serverHost + ":" + serverPort);
+            String address = String.format("%s:%s", serverHost, serverPort);
+            MemCachedUtil.deleteFromMemCached(info.getUserID() + "", address);
             LogUtils.logSessionInfo(logger, channel,
                     "Removed from cache: user {}", info.getUserID());
         }
