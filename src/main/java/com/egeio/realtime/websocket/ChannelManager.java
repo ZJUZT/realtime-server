@@ -10,8 +10,8 @@ import com.egeio.realtime.websocket.utils.MemCachedUtil;
 import io.netty.channel.Channel;
 import io.netty.util.AttributeKey;
 
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -26,7 +26,7 @@ public class ChannelManager {
     private static final AttributeKey<UserSessionInfo> userSessionKey = AttributeKey
             .valueOf("userSessionInfo");
     //    private static ConcurrentHashMap<Long, ConcurrentHashMap<String, Channel>> userChannelMapping = new ConcurrentHashMap<>();
-    private static final ConcurrentHashMap<Long, ArrayList<Channel>> userChannelMapping = new ConcurrentHashMap<>();
+    private static ConcurrentHashMap<Long, Vector<Channel>> userChannelMapping = new ConcurrentHashMap<>();
     //configuration the ip address and port for the server
     //which will be stored into memory cache
     private final static String serverHost = Config.getConfig()
@@ -34,7 +34,7 @@ public class ChannelManager {
     private final static long serverPort = Config
             .getNumber("/configuration/websocket_port", 8080);
 
-    private static synchronized void setUserSessionInfoInChannel(
+    private static void setUserSessionInfoInChannel(
             Channel channel, UserSessionInfo info) {
         channel.attr(userSessionKey).set(info);
     }
@@ -62,7 +62,7 @@ public class ChannelManager {
             throws Exception {
         long userID = info.getUserID();
         if (userChannelMapping.get(userID) == null) {
-            userChannelMapping.put(userID, new ArrayList<Channel>());
+            userChannelMapping.put(userID, new Vector<Channel>());
         }
         setUserSessionInfoInChannel(channel, info);
         userChannelMapping.get(userID).add(channel);
@@ -86,7 +86,7 @@ public class ChannelManager {
         }
         LogUtils.logSessionInfo(logger, channel,
                 "Try to remove user channel from mapping");
-        ArrayList<Channel> session = userChannelMapping.get(info.getUserID());
+        Vector<Channel> session = userChannelMapping.get(info.getUserID());
         if (session == null) {
             LogUtils.logSessionInfo(logger, channel,
                     "cannot find user channel in mapping");

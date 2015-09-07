@@ -50,7 +50,7 @@ public class MemCachedUtil {
      * @param userID              user id
      * @param realTimeNodeAddress real-time server address
      */
-    public synchronized static void writeMemCached(String userID,
+    public static void writeMemCached(String userID,
             int expireTime, String realTimeNodeAddress) throws Exception {
         Gson gson = GsonUtils.getGson();
         Set<String> addresses;
@@ -85,7 +85,7 @@ public class MemCachedUtil {
      * @param realTimeNodeAddress real-time server address
      * @throws Exception
      */
-    public synchronized static void deleteFromMemCached(String userID,
+    public static void deleteFromMemCached(String userID,
             String realTimeNodeAddress) throws Exception {
         if (ChannelManager.getChannelByUserID(Long.valueOf(userID)) != null) {
             //still has active channels, no need deleting node node address from cache
