@@ -34,8 +34,8 @@ public class ChannelManager {
     private final static long serverPort = Config
             .getNumber("/configuration/websocket_port", 8080);
 
-    private static void setUserSessionInfoInChannel(
-            Channel channel, UserSessionInfo info) {
+    private static void setUserSessionInfoInChannel(Channel channel,
+            UserSessionInfo info) {
         channel.attr(userSessionKey).set(info);
     }
 
@@ -63,6 +63,9 @@ public class ChannelManager {
         long userID = info.getUserID();
         if (userChannelMapping.get(userID) == null) {
             userChannelMapping.put(userID, new Vector<Channel>());
+        }
+        if(userChannelMapping.get(userID).contains(channel)){
+            return;
         }
         setUserSessionInfoInChannel(channel, info);
         userChannelMapping.get(userID).add(channel);
@@ -92,9 +95,10 @@ public class ChannelManager {
                     "cannot find user channel in mapping");
             return;
         }
+
+        userChannelMapping.get(info.getUserID()).remove(channel);
         LogUtils.logSessionInfo(logger, channel,
                 "channel removed from mapping");
-        userChannelMapping.get(info.getUserID()).remove(channel);
         if (userChannelMapping.get(info.getUserID()).isEmpty()) {
             userChannelMapping.remove(info.getUserID());
             //delete the real-time node entry for the user
