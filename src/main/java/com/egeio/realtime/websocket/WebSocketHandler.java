@@ -381,8 +381,9 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
         //get the content to send to each user
         jsonObject.remove("user_id");
 
-        //审阅邀请、审阅评论、评论消息特殊处理
+        //审阅、评论消息特殊处理
         HashMap<Long, Object> userTypeMap = null;
+        HashMap<Long, Object> userMessageMap = null;
         if (jsonObject.get("user_type_map") != null) {
             userTypeMap = gson.fromJson(jsonObject.get("user_type_map"),
                     new TypeToken<Map<Long, Object>>() {
@@ -390,6 +391,12 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
             jsonObject.remove("user_type_map");
         }
 
+        if (jsonObject.get("user_message_map") != null) {
+            userMessageMap = gson.fromJson(jsonObject.get("user_message_map"),
+                    new TypeToken<Map<Long, Object>>() {
+                    }.getType());
+            jsonObject.remove("user_message_map");
+        }
 
         for (JsonElement userID : userList) {
             Collection<Channel> channels = ChannelManager
@@ -404,9 +411,22 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
                     JsonElement.class));
             if (userTypeMap != null) {
                 Object userType = userTypeMap.get(userID.getAsLong());
+
                 jsonObject.add("user_type",
                         gson.fromJson(String.valueOf(userType),
                                 JsonElement.class));
+
+            }
+
+            //add message id to id field for each user
+            if (userMessageMap != null) {
+                Object messageID = userMessageMap.get(userID.getAsLong());
+                JsonElement jsonId = jsonObject.get("id");
+                if (jsonId != null) {
+                    String id = jsonId.getAsString();
+                    id = messageID + "_" + id;
+                    jsonObject.add("id", gson.fromJson(id, JsonElement.class));
+                }
             }
             msg.add("action_info", jsonObject);
 

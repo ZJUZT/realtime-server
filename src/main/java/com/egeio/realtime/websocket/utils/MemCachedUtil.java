@@ -16,6 +16,7 @@ import net.spy.memcached.MemcachedClient;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.Future;
 
 /**
  * This class provides interface for writing data and deleting data from memory cached
@@ -99,7 +100,7 @@ public class MemCachedUtil {
                     "Can't find real-time server in cache for user:{}", userID);
             return;
         }
-
+        logger.info(uuid,"CASValue:{}",casValue.getCas());
         Gson gson = GsonUtils.getGson();
         String jsonObj = gson.toJson(casValue.getValue());
         //delete "\" and quotation marks embracing the json object
@@ -108,12 +109,22 @@ public class MemCachedUtil {
                 new TypeToken<Set<String>>() {
                 }.getType());
         addresses.remove(realTimeNodeAddress);
-        CASResponse casResponse = memClient
-                .cas(userID, casValue.getCas(), gson.toJson(addresses));
-        if (casResponse == CASResponse.OK) {
-            return;
+        if(addresses.isEmpty()){
+            Future<Boolean> future = memClient.delete(userID);
+            if(future.get()){
+                return;
+            }
         }
+        else{
+            CASResponse casResponse = memClient
+                    .cas(userID, casValue.getCas(), gson.toJson(addresses));
+            if (casResponse == CASResponse.OK) {
+                return;
+            }
+        }
+
+
         Thread.sleep(50);
-        deleteFromMemCached(userID,realTimeNodeAddress);
+        deleteFromMemCached(userID, realTimeNodeAddress);
     }
 }
