@@ -377,13 +377,15 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
             return;
         }
         JsonArray userList = jsonObject.get("user_id").getAsJsonArray();
+        String infoType = jsonObject.get("type").getAsString();
 
         //get the content to send to each user
         jsonObject.remove("user_id");
 
         //审阅、评论消息特殊处理
         HashMap<Long, Object> userTypeMap = null;
-        HashMap<Long, Object> userMessageMap = null;
+        HashMap<Long, Long> userMessageMap = null;
+        HashMap<Long, Long> userCollabMap = null;
         if (jsonObject.get("user_type_map") != null) {
             userTypeMap = gson.fromJson(jsonObject.get("user_type_map"),
                     new TypeToken<Map<Long, Object>>() {
@@ -393,9 +395,15 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
 
         if (jsonObject.get("user_message_map") != null) {
             userMessageMap = gson.fromJson(jsonObject.get("user_message_map"),
-                    new TypeToken<Map<Long, Object>>() {
+                    new TypeToken<Map<Long, Long>>() {
                     }.getType());
             jsonObject.remove("user_message_map");
+        }
+
+        if (infoType.equals("collab")) {
+            userCollabMap = gson.fromJson(jsonObject.get("id"),
+                    new TypeToken<Map<Long, Long>>() {
+                    }.getType());
         }
 
         for (JsonElement userID : userList) {
@@ -420,15 +428,19 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
 
             //add message id to id field for each user
             if (userMessageMap != null) {
-                Object messageID = userMessageMap.get(userID.getAsLong());
+                Long messageID = userMessageMap.get(userID.getAsLong());
                 JsonElement jsonId = jsonObject.get("id");
-                if (jsonId != null) {
-                    String id = jsonId.getAsString();
-                    id = messageID + "_" + id;
-                    jsonObject.add("id", gson.fromJson(id, JsonElement.class));
+                long id;
+                if (userCollabMap!=null) {
+                    id = userCollabMap.get(userID.getAsLong());
                 }
-            }
-            msg.add("action_info", jsonObject);
+                else {
+                    id = jsonId.getAsLong();
+                }
+
+                String infoId = messageID + "_" + id;
+                jsonObject.add("id", gson.fromJson(infoId, JsonElement.class));
+            } msg.add("action_info", jsonObject);
 
             String request = gson.toJson(msg);
             for (Channel channel : channels) {
