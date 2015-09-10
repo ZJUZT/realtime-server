@@ -371,20 +371,27 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
     private void doSync(String jsonStr) throws Exception {
         Gson gson = GsonUtils.getGson();
         JsonObject jsonObject = gson.fromJson(jsonStr, JsonObject.class);
-        //is realtime notification or not
+        //filter out not realtime type message
         if (jsonObject.get("jobType") == null || !jsonObject.get("jobType")
                 .getAsString().equals("Realtime_job")) {
             return;
         }
+
+        //get the users list to which the message will send
         JsonArray userList = jsonObject.get("user_id").getAsJsonArray();
-        String infoType = jsonObject.get("type").getAsString();
-
-        //get the content to send to each user
         jsonObject.remove("user_id");
+        JsonElement infoTypeJson = jsonObject.get("type");
+        if (infoTypeJson == null) {
+            logger.error(uuid, "No info type found in the message");
+            return;
+        }
+        String infoType = infoTypeJson.getAsString();
 
-        //审阅、评论消息特殊处理
+        //审阅、评论 user_type 会有区分
         HashMap<Long, Object> userTypeMap = null;
         HashMap<Long, Long> userMessageMap = null;
+
+        //different collab id for different user
         HashMap<Long, Long> userCollabMap = null;
         if (jsonObject.get("user_type_map") != null) {
             userTypeMap = gson.fromJson(jsonObject.get("user_type_map"),
@@ -400,6 +407,7 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
             jsonObject.remove("user_message_map");
         }
 
+        //for collab, id filed is a map rather than a string
         if (infoType.equals("collab")) {
             userCollabMap = gson.fromJson(jsonObject.get("id"),
                     new TypeToken<Map<Long, Long>>() {
@@ -431,7 +439,7 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
                 Long messageID = userMessageMap.get(userID.getAsLong());
                 JsonElement jsonId = jsonObject.get("id");
                 long id;
-                if (userCollabMap!=null) {
+                if (userCollabMap != null) {
                     id = userCollabMap.get(userID.getAsLong());
                 }
                 else {
@@ -440,7 +448,8 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
 
                 String infoId = messageID + "_" + id;
                 jsonObject.add("id", gson.fromJson(infoId, JsonElement.class));
-            } msg.add("action_info", jsonObject);
+            }
+            msg.add("action_info", jsonObject);
 
             String request = gson.toJson(msg);
             for (Channel channel : channels) {
