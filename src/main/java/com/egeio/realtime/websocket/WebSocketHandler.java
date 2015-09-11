@@ -380,19 +380,13 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
         //get the users list to which the message will send
         JsonArray userList = jsonObject.get("user_id").getAsJsonArray();
         jsonObject.remove("user_id");
-        JsonElement infoTypeJson = jsonObject.get("type");
-        if (infoTypeJson == null) {
-            logger.error(uuid, "No info type found in the message");
-            return;
-        }
-        String infoType = infoTypeJson.getAsString();
 
         //审阅、评论 user_type 会有区分
-        HashMap<Long, Object> userTypeMap = null;
-        HashMap<Long, Long> userMessageMap = null;
+        HashMap<Long, Object> userTypeMap = new HashMap<>();
+        HashMap<Long, String> userMessageMap = null;
+        HashMap<Long, String> userUrlMap = null;
+        String singleUrl = null;
 
-        //different collab id for different user
-        HashMap<Long, Long> userCollabMap = null;
         if (jsonObject.get("user_type_map") != null) {
             userTypeMap = gson.fromJson(jsonObject.get("user_type_map"),
                     new TypeToken<Map<Long, Object>>() {
@@ -400,23 +394,33 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
             jsonObject.remove("user_type_map");
         }
 
-        if (jsonObject.get("user_message_map") != null) {
-            userMessageMap = gson.fromJson(jsonObject.get("user_message_map"),
-                    new TypeToken<Map<Long, Long>>() {
+        if (jsonObject.get("message_map") != null) {
+            userMessageMap = gson.fromJson(jsonObject.get("message_map"),
+                    new TypeToken<Map<Long, String>>() {
                     }.getType());
-            jsonObject.remove("user_message_map");
+            jsonObject.remove("message_map");
+        }
+        else {
+            throw new Exception("Can't find message_map");
         }
 
-        //for collab, id filed is a map rather than a string
-        if (infoType.equals("collab")) {
-            userCollabMap = gson.fromJson(jsonObject.get("id"),
-                    new TypeToken<Map<Long, Long>>() {
+        if (jsonObject.get("url_map") != null) {
+            userUrlMap = gson.fromJson(jsonObject.get("url_map"),
+                    new TypeToken<Map<Long, String>>() {
                     }.getType());
+            jsonObject.remove("url_map");
+        }
+        else if (jsonObject.get("url") != null) {
+            singleUrl = jsonObject.get("url").getAsString();
+        }
+        else {
+            throw new Exception("Can't find url information");
         }
 
         for (JsonElement userID : userList) {
+            long uid = userID.getAsLong();
             Collection<Channel> channels = ChannelManager
-                    .getChannelByUserID(userID.getAsLong());
+                    .getChannelByUserID(uid);
             ChannelManager.displayUserChannelMapping();
             if (channels == null) {
                 logger.info(uuid, "No active channels for user:{}", userID);
@@ -426,29 +430,26 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
             msg.add("action", gson.fromJson(ActionType.ACTION_NEW_INFO,
                     JsonElement.class));
             if (userTypeMap != null) {
-                Object userType = userTypeMap.get(userID.getAsLong());
+                Object userType = userTypeMap.get(uid);
 
                 jsonObject.add("user_type",
                         gson.fromJson(String.valueOf(userType),
                                 JsonElement.class));
-
             }
 
-            //add message id to id field for each user
-            if (userMessageMap != null) {
-                Long messageID = userMessageMap.get(userID.getAsLong());
-                JsonElement jsonId = jsonObject.get("id");
-                long id;
-                if (userCollabMap != null) {
-                    id = userCollabMap.get(userID.getAsLong());
-                }
-                else {
-                    id = jsonId.getAsLong();
-                }
+            String messageID = userMessageMap.get(uid);
+            jsonObject.add("message_id",
+                    gson.fromJson(messageID, JsonElement.class));
 
-                String infoId = messageID + "_" + id;
-                jsonObject.add("id", gson.fromJson(infoId, JsonElement.class));
+            String url;
+            if (userUrlMap != null) {
+                url = userUrlMap.get(uid);
             }
+            else {
+                url = singleUrl;
+            }
+
+            jsonObject.add("url", gson.fromJson(url, JsonElement.class));
             msg.add("action_info", jsonObject);
 
             String request = gson.toJson(msg);
