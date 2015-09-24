@@ -1,22 +1,24 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <configuration>
-  <ip_address>121.40.237.99</ip_address>
-  <websocket_port>8080</websocket_port>
+    <ip_address>121.40.237.99</ip_address>
+    <socket_io_port>8080</socket_io_port>
 
-  <auth_endpoint>
-  	<protocol>http</protocol>
-    <host>121.40.237.99</host>
-    <api>/api/v1/user/account_info</api>
-  </auth_endpoint>
-  
-  <monitor>
-    <opentsdb ip="localhost" port="4242"></opentsdb>
-    <metric>com.egeio.realtime.websocket</metric>
-    <interval>10</interval>
-  </monitor>
+    <http_request_port>8081</http_request_port>
 
-  <memcached>
-      <host>localhost</host>
-      <port>11211</port>
-  </memcached>
+    <auth_endpoint>
+        <protocol>http</protocol>
+        <host>121.40.237.99</host>
+        <api>/api/v1/user/account_info</api>
+    </auth_endpoint>
+
+    <monitor>
+        <opentsdb ip="localhost" port="4242"></opentsdb>
+        <metric>com.egeio.realtime.socketio</metric>
+        <interval>10</interval>
+    </monitor>
+
+    <memcached>
+        <host>localhost</host>
+        <port>11211</port>
+    </memcached>
 </configuration>

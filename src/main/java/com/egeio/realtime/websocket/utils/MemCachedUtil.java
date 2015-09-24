@@ -88,7 +88,7 @@ public class MemCachedUtil {
      */
     public static void deleteFromMemCached(String userID,
             String realTimeNodeAddress) throws Exception {
-        if (ChannelManager.getChannelByUserID(Long.valueOf(userID)) != null) {
+        if (ChannelManager.getClientsByUserID(Long.valueOf(userID)) != null) {
             //still has active channels, no need deleting node node address from cache
             return;
         }

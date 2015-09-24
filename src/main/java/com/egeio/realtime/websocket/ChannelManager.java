@@ -1,5 +1,6 @@
 package com.egeio.realtime.websocket;
 
+import com.corundumstudio.socketio.SocketIOClient;
 import com.egeio.core.config.Config;
 import com.egeio.core.log.Logger;
 import com.egeio.core.log.LoggerFactory;
@@ -7,8 +8,6 @@ import com.egeio.core.log.MyUUID;
 import com.egeio.realtime.websocket.model.UserSessionInfo;
 import com.egeio.realtime.websocket.utils.LogUtils;
 import com.egeio.realtime.websocket.utils.MemCachedUtil;
-import io.netty.channel.Channel;
-import io.netty.util.AttributeKey;
 
 import java.util.Collection;
 import java.util.Vector;
@@ -23,29 +22,49 @@ public class ChannelManager {
             .getLogger(ChannelManager.class);
     private static MyUUID uuid = new MyUUID();
 
-    private static final AttributeKey<UserSessionInfo> userSessionKey = AttributeKey
-            .valueOf("userSessionInfo");
-    //    private static ConcurrentHashMap<Long, ConcurrentHashMap<String, Channel>> userChannelMapping = new ConcurrentHashMap<>();
-    private static ConcurrentHashMap<Long, Vector<Channel>> userChannelMapping = new ConcurrentHashMap<>();
+//    private static final AttributeKey<UserSessionInfo> userSessionKey = AttributeKey
+//            .valueOf("userSessionInfo");
+    private static ConcurrentHashMap<Long, Vector<SocketIOClient>> userClientMapping = new ConcurrentHashMap<>();
+
+    private static ConcurrentHashMap<SocketIOClient, UserSessionInfo> ClientUUIDMap = new ConcurrentHashMap<>();
+
     //configuration the ip address and port for the server
     //which will be stored into memory cache
     private final static String serverHost = Config.getConfig()
             .getElement("/configuration/ip_address").getText();
     private final static long serverPort = Config
-            .getNumber("/configuration/websocket_port", 8080);
+            .getNumber("/configuration/http_request_port", 8080);
 
-    private static void setUserSessionInfoInChannel(Channel channel,
-            UserSessionInfo info) {
+
+    /*private static void setUserSessionInfoInChannel(Channel channel,
+                                                    UserSessionInfo info) {
         channel.attr(userSessionKey).set(info);
-    }
+    }*/
 
-    private static UserSessionInfo getUserSessionInfoFromChannel(
+    /*private static UserSessionInfo getUserSessionInfoFromChannel(
             Channel channel) {
         return channel.attr(userSessionKey).get();
+    }*/
+
+    /*public static MyUUID getUserSessionIDFromChannel(Channel channel) {
+        UserSessionInfo info = channel.attr(userSessionKey).get();
+        if (info == null) {
+            return null;
+        }
+        return info.getSessionID();
+    }*/
+
+
+    private static void setUserSessionInfoInChannel(SocketIOClient client, UserSessionInfo info) {
+        ClientUUIDMap.put(client, info);
     }
 
-    public static MyUUID getUserSessionIDFromChannel(Channel channel) {
-        UserSessionInfo info = channel.attr(userSessionKey).get();
+    public static UserSessionInfo getUserSessionInfo(SocketIOClient client) {
+        return ClientUUIDMap.get(client);
+    }
+
+    public static MyUUID getSessionID(SocketIOClient client) {
+        UserSessionInfo info = ClientUUIDMap.get(client);
         if (info == null) {
             return null;
         }
@@ -53,74 +72,74 @@ public class ChannelManager {
     }
 
     /**
-     * add user-channel into the mapping
-     *
-     * @param info    user session info
-     * @param channel user channel
+     * @param info
+     * @param client
+     * @throws Exception
      */
-    public static void addUserChannel(UserSessionInfo info, Channel channel)
+    public static void addUserClient(UserSessionInfo info, SocketIOClient client)
             throws Exception {
         long userID = info.getUserID();
-        if (userChannelMapping.get(userID) == null) {
-            userChannelMapping.put(userID, new Vector<Channel>());
+        if (userClientMapping.get(userID) == null) {
+            userClientMapping.put(userID, new Vector<SocketIOClient>());
         }
-        if(userChannelMapping.get(userID).contains(channel)){
+        if (userClientMapping.get(userID).contains(client)) {
             return;
         }
-        setUserSessionInfoInChannel(channel, info);
-        userChannelMapping.get(userID).add(channel);
+//        setUserSessionInfoInChannel(channel, info);
+        userClientMapping.get(userID).add(client);
 
         //store the real-time server info for each online user in cache
         String address = String.format("%s:%s", serverHost, serverPort);
         MemCachedUtil.writeMemCached(userID + "", 0, address);
-        LogUtils.logSessionInfo(logger, channel,
+        LogUtils.logSessionInfo(logger, client,
                 "Added to the cache: user {} is on {}", userID, address);
+//        logger.info(uuid, "Added to the cache: user {} is on {}", userID, address);
     }
 
-    /**
-     * remover user-channel from mapping
-     *
-     * @param channel user channel
-     */
-    public static void removeUserChannel(Channel channel) throws Exception {
-        UserSessionInfo info = getUserSessionInfoFromChannel(channel);
-        if (channel.attr(userSessionKey).get() == null) {
+
+    public static void removeUserClient(SocketIOClient client) throws Exception {
+        UserSessionInfo info = getUserSessionInfo(client);
+//        if (channel.attr(userSessionKey).get() == null) {
+//            return;
+//        }
+        if (ClientUUIDMap.get(client) == null) {
             return;
         }
-        LogUtils.logSessionInfo(logger, channel,
-                "Try to remove user channel from mapping");
-        Vector<Channel> session = userChannelMapping.get(info.getUserID());
+//        LogUtils.logSessionInfo(logger, channel,
+//                "Try to remove user channel from mapping");
+
+        Vector<SocketIOClient> session = userClientMapping.get(info.getUserID());
         if (session == null) {
-            LogUtils.logSessionInfo(logger, channel,
+            LogUtils.logSessionInfo(logger, client,
                     "cannot find user channel in mapping");
             return;
         }
 
-        userChannelMapping.get(info.getUserID()).remove(channel);
-        LogUtils.logSessionInfo(logger, channel,
+        userClientMapping.get(info.getUserID()).remove(client);
+        LogUtils.logSessionInfo(logger, client,
                 "channel removed from mapping");
-        if (userChannelMapping.get(info.getUserID()).isEmpty()) {
-            userChannelMapping.remove(info.getUserID());
+        if (userClientMapping.get(info.getUserID()).isEmpty()) {
+            userClientMapping.remove(info.getUserID());
             //delete the real-time node entry for the user
             String address = String.format("%s:%s", serverHost, serverPort);
             MemCachedUtil.deleteFromMemCached(info.getUserID() + "", address);
-            LogUtils.logSessionInfo(logger, channel,
+            LogUtils.logSessionInfo(logger, client,
                     "Removed from cache: user {}", info.getUserID());
         }
     }
 
     public static void displayUserChannelMapping() {
         logger.info(uuid, "Current User Channel Mapping: {}",
-                userChannelMapping);
+                userClientMapping);
     }
 
     public static long getOnlineUserNum() {
-        return userChannelMapping.size();
+        return userClientMapping.size();
     }
 
-    public static Collection<Channel> getChannelByUserID(long userID) {
-        if (userChannelMapping.get(userID) != null) {
-            return userChannelMapping.get(userID);
+    public static Collection<SocketIOClient> getClientsByUserID(long userID) {
+        if (userClientMapping.get(userID) != null) {
+            return userClientMapping.get(userID);
         }
         return null;
     }

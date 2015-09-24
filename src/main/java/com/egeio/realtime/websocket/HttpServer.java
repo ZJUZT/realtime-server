@@ -11,55 +11,37 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 
 /**
- * Created by think on 2015/8/1.
- * Main function entrance, set up the webSocket server
- * bind the server to the specific port
+ * Created by think on 2015/9/23.
+ * This server monitor the http request sent from event processor
  */
-public class WebSocketServer {
+public class HttpServer {
     private final int port;
     private static Logger logger = LoggerFactory
-            .getLogger(WebSocketServer.class);
+            .getLogger(HttpServer.class);
     private static MyUUID uuid= new MyUUID();
 
-    //leave out ssl temporarily
-    public WebSocketServer(int port) {
+    public HttpServer(int port){
         this.port = port;
     }
 
-    public void run() throws Exception {
+    public void run() {
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
             ServerBootstrap b = new ServerBootstrap();
             b.group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)
-                    .childHandler(new WebSocketInitializer(port))
+                    .childHandler(new HttpServerInitializer(port))
                     .option(ChannelOption.SO_BACKLOG, 128)
                     .childOption(ChannelOption.SO_KEEPALIVE, true);
             ChannelFuture f = b.bind(port).sync();
-            logger.info(uuid, "WebSocket server started at port {}", port);
+            logger.info(uuid, "Http server started at port {}", port);
             f.channel().closeFuture().sync();
-        }
-        finally {
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } finally {
             workerGroup.shutdownGracefully();
             bossGroup.shutdownGracefully();
         }
     }
-
-    public static void main(String[] args) {
-        int port;
-        if (args.length > 0) {
-            port = Integer.parseInt((args[0]));
-        }
-        else {
-            port = 8080;
-        }
-        try {
-            new WebSocketServer(port).run();
-        }
-        catch (Exception e) {
-            logger.error(uuid, e, "failed to start the realTime server");
-        }
-    }
-
 }
