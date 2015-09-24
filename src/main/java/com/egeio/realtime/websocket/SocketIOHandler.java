@@ -116,7 +116,7 @@ public class SocketIOHandler {
             baseRes.setStatusCode(FAILED_STATUS_CODE);
             baseRes.setErrorMessage("No action to be taken");
             res = gson.toJson(baseRes);
-            client.sendEvent("ack", res);
+            client.sendEvent("realtime", res);
             return;
         }
 
@@ -139,7 +139,7 @@ public class SocketIOHandler {
         res = gson.toJson(baseRes);
         if (res != null) {
 //            channel.writeAndFlush(new TextWebSocketFrame(res));
-            client.sendEvent("ack", res);
+            client.sendEvent("realtime", res);
         }
     }
 
@@ -171,7 +171,7 @@ public class SocketIOHandler {
      */
     private void doLogout(SocketIOClient client) throws Exception {
         ChannelManager.removeUserClient(client);
-        client.sendEvent("ack", "user logout");
+        client.sendEvent("realtime", "user logout");
     }
 
     /**
@@ -230,7 +230,7 @@ public class SocketIOHandler {
             long uid = userID.getAsLong();
             Collection<SocketIOClient> clients = ChannelManager
                     .getClientsByUserID(uid);
-            ChannelManager.displayUserChannelMapping();
+//            ChannelManager.displayUserChannelMapping();
             if (clients == null) {
                 logger.info(uuid, "No active channels for user:{}", userID);
                 return;
@@ -266,7 +266,7 @@ public class SocketIOHandler {
                     continue;
                 }
 //                channel.writeAndFlush(new TextWebSocketFrame(request));
-                client.sendEvent("new_info",request);
+                client.sendEvent("realtime",request);
             }
         }
 
