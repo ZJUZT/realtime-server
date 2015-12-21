@@ -26,7 +26,7 @@ public class ChannelManager {
 //            .valueOf("userSessionInfo");
     private static ConcurrentHashMap<Long, Vector<SocketIOClient>> userClientMapping = new ConcurrentHashMap<>();
 
-    private static ConcurrentHashMap<SocketIOClient, UserSessionInfo> ClientUUIDMap = new ConcurrentHashMap<>();
+    private static ConcurrentHashMap<SocketIOClient, UserSessionInfo> ClientSessionMap = new ConcurrentHashMap<>();
 
     //configuration the ip address and port for the server
     //which will be stored into memory cache
@@ -55,16 +55,16 @@ public class ChannelManager {
     }*/
 
 
-    private static void setUserSessionInfoInChannel(SocketIOClient client, UserSessionInfo info) {
-        ClientUUIDMap.put(client, info);
+    public static void setUserSessionInfoInChannel(SocketIOClient client, UserSessionInfo info) {
+        ClientSessionMap.put(client, info);
     }
 
     public static UserSessionInfo getUserSessionInfo(SocketIOClient client) {
-        return ClientUUIDMap.get(client);
+        return ClientSessionMap.get(client);
     }
 
     public static MyUUID getSessionID(SocketIOClient client) {
-        UserSessionInfo info = ClientUUIDMap.get(client);
+        UserSessionInfo info = ClientSessionMap.get(client);
         if (info == null) {
             return null;
         }
@@ -102,7 +102,7 @@ public class ChannelManager {
 //        if (channel.attr(userSessionKey).get() == null) {
 //            return;
 //        }
-        if (ClientUUIDMap.get(client) == null) {
+        if (ClientSessionMap.get(client) == null) {
             return;
         }
 //        LogUtils.logSessionInfo(logger, channel,

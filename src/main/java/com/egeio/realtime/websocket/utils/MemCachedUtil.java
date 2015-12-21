@@ -100,7 +100,7 @@ public class MemCachedUtil {
                     "Can't find real-time server in cache for user:{}", userID);
             return;
         }
-        logger.info(uuid,"CASValue:{}",casValue.getCas());
+//        logger.info(uuid,"CASValue:{}",casValue.getCas());
         Gson gson = GsonUtils.getGson();
         String jsonObj = gson.toJson(casValue.getValue());
         //delete "\" and quotation marks embracing the json object

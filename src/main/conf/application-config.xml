@@ -7,7 +7,7 @@
 
     <auth_endpoint>
         <protocol>http</protocol>
-        <host>121.40.237.99</host>
+        <host>zhangteng.yifangyun.com</host>
         <api>/api/v1/user/account_info</api>
     </auth_endpoint>
 
