@@ -19,7 +19,7 @@ import java.util.Set;
 import java.util.concurrent.Future;
 
 /**
- * This class provides interface for writing data and deleting data from memory cached
+ * This class provides interface for writing data and deleting data from MemCached
  * Created by think on 2015/8/4.
  */
 public class MemCachedUtil {
@@ -44,7 +44,7 @@ public class MemCachedUtil {
     }
 
     /**
-     * Considering one user may have different device and possesses different channels
+     * Considering one user may have different devices and possesses different channels
      * the channels may be connected to different real-time server node
      * so we have to store all the distinct node address for each user
      *
@@ -100,9 +100,10 @@ public class MemCachedUtil {
                     "Can't find real-time server in cache for user:{}", userID);
             return;
         }
-//        logger.info(uuid,"CASValue:{}",casValue.getCas());
+
         Gson gson = GsonUtils.getGson();
         String jsonObj = gson.toJson(casValue.getValue());
+
         //delete "\" and quotation marks embracing the json object
         Set<String> addresses = gson.fromJson(
                 jsonObj.substring(1, jsonObj.length() - 1).replace("\\", ""),

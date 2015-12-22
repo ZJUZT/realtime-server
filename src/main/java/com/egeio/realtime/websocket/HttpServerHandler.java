@@ -78,8 +78,14 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<Object> {
         ctx.close();
     }
 
+    /**
+     * @param channelHandlerContext context
+     * @param request               http request
+     * @throws Exception
+     */
     private void handleHttp(ChannelHandlerContext channelHandlerContext,
                             FullHttpRequest request) throws Exception {
+
         //POST method
         //handle action to push new information in http request
         if (request.getMethod() == POST && request.getUri()
@@ -91,7 +97,7 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<Object> {
             logger.info(uuid, "HTTP request content:{}", postData);
 
             if (postData == null) {
-                logger.info(uuid, "No data in this http request found");
+                logger.error(uuid, "No data in this http request found");
                 sendHttpResponse(channelHandlerContext,
                         new DefaultFullHttpResponse(HTTP_1_1, BAD_REQUEST));
                 return;
@@ -108,7 +114,7 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<Object> {
                         new DefaultFullHttpResponse(HTTP_1_1, OK));
                 doSync(dataFromProcessor);
             } else {
-                logger.info(uuid, "Can't get userID from HTTP request");
+                logger.error(uuid, "Can't get userID from HTTP request");
             }
         }
 
@@ -123,7 +129,8 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<Object> {
     public void doSync(String jsonStr) throws Exception {
         Gson gson = GsonUtils.getGson();
         JsonObject jsonObject = gson.fromJson(jsonStr, JsonObject.class);
-        //filter out not realtime type message
+
+        //filter
         if (jsonObject.get("jobType") == null || !jsonObject.get("jobType")
                 .getAsString().equals("Realtime_job")) {
             return;
@@ -135,7 +142,7 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<Object> {
 
         //审阅、评论 user_type 会有区分
         HashMap<Long, Object> userTypeMap = new HashMap<>();
-        HashMap<Long, String> userMessageMap = null;
+        HashMap<Long, String> userMessageMap;
         HashMap<Long, String> userUrlMap = null;
         String singleUrl = null;
 
@@ -170,11 +177,12 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<Object> {
             long uid = userID.getAsLong();
             Collection<SocketIOClient> clients = ChannelManager
                     .getClientsByUserID(uid);
-//            ChannelManager.displayUserChannelMapping();
+
             if (clients == null) {
                 logger.info(uuid, "No active channels for user:{}", userID);
                 return;
             }
+
             JsonObject msg = new JsonObject();
             msg.add("action", gson.fromJson(ActionType.ACTION_NEW_INFO,
                     JsonElement.class));
@@ -205,8 +213,7 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<Object> {
                 if (!client.isChannelOpen()) {
                     continue;
                 }
-//                channel.writeAndFlush(new TextWebSocketFrame(request));
-                client.sendEvent(Event,request);
+                client.sendEvent(Event, request);
             }
         }
 

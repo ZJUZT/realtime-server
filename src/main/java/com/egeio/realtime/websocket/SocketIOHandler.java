@@ -106,10 +106,12 @@ public class SocketIOHandler {
         Gson gson = GsonUtils.getGson();
         JsonObject req = gson.fromJson(reqJson, JsonObject.class);
         LogUtils.logSessionInfo(logger, client, "channel received {}", req);
+
         if (req.get("action") == null || req.get("action_info") == null) {
-            logger.info(uuid, "Invalid login request");
+            logger.error(uuid, "Invalid login request");
             return;
         }
+
         String action = req.get("action").getAsString();
         BaseResponse baseRes = new BaseResponse(
                 action, OK_STATUS_CODE);
@@ -125,6 +127,7 @@ public class SocketIOHandler {
         try {
             //parse json
             //{action:"login",action_info:{authToken:...}}
+
             if (action.equalsIgnoreCase(ActionType.ACTION_LOGIN)) {
                 doLogin(req.get("action_info").getAsJsonObject(), client);
             } else if (action.equalsIgnoreCase(ActionType.ACTION_LOGOUT)) {
@@ -140,7 +143,6 @@ public class SocketIOHandler {
 
         res = gson.toJson(baseRes);
         if (res != null) {
-//            channel.writeAndFlush(new TextWebSocketFrame(res));
             client.sendEvent(Event, res);
         }
     }
@@ -153,9 +155,10 @@ public class SocketIOHandler {
      * @throws Exception
      */
     private void doLogin(JsonObject action_info, SocketIOClient client) throws Exception {
-//        JsonObject json = GsonUtils.getGson().fromJson(action_info, JsonObject.class);
+
         String authToken = action_info.get("auth_token").getAsString();
         UserInfo userInfo = AuthenticationUtils.getUserInfoFromToken(authToken);
+
         if (userInfo != null) {
             UserSessionInfo info = new UserSessionInfo(authToken,
                     userInfo.getUserId(), userInfo.getUserName(), client);

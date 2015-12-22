@@ -9,6 +9,7 @@ import io.netty.handler.codec.http.HttpResponseEncoder;
 
 /**
  * Created by think on 2015/9/23.
+ * Http server initializer
  */
 public class HttpServerInitializer extends ChannelInitializer<SocketChannel>{
     private int port;

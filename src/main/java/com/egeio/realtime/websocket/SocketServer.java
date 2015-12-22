@@ -3,25 +3,26 @@ package com.egeio.realtime.websocket;
 import com.corundumstudio.socketio.Configuration;
 import com.corundumstudio.socketio.SocketIOServer;
 import com.egeio.core.config.Config;
-import com.egeio.core.log.Logger;
-import com.egeio.core.log.LoggerFactory;
-import com.egeio.core.log.MyUUID;
 
 /**
  * Created by think on 2015/9/18.
- * Use socket.io to replace websocket for more compatible
+ * Use socket.io to replace webSocket for more compatible
+ *
+ * SocketIO Server: (default port: 8080
+ * maintain long connection
+ *
+ * Http server: (default port:8081)
+ * handle http request from event processor
  */
 public class SocketServer {
+
     private final int port;
-    private static Logger logger = LoggerFactory
-            .getLogger(SocketServer.class);
-    private static MyUUID uuid = new MyUUID();
     private final static String serverHost = Config.getConfig()
             .getElement("/configuration/ip_address").getText();
-    private final static String socketIOPort = Config.getConfig()
-            .getElement("/configuration/socket_io_port").getText();
-    private final static String HttpRequestPort = Config.getConfig()
-            .getElement("/configuration/http_request_port").getText();
+    private final static int socketIOPort = Config
+            .getNumber("/configuration/socket_io_port", 8080);
+    private final static int HttpRequestPort = Config
+            .getNumber("/configuration/http_request_port", 8081);
 
     public SocketServer(int port) {
         this.port = port;
@@ -40,7 +41,7 @@ public class SocketServer {
     }
 
     public static void main(String[] args) {
-        new SocketServer(Integer.valueOf(socketIOPort)).run();
-        new HttpServer(Integer.valueOf(HttpRequestPort)).run();
+        new SocketServer(socketIOPort).run();
+        new HttpServer(HttpRequestPort).run();
     }
 }
