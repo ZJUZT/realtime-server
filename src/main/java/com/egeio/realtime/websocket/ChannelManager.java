@@ -32,8 +32,8 @@ public class ChannelManager {
     private final static long serverPort = Config
             .getNumber("/configuration/http_request_port", 8080);
 
-
-    public static void setUserSessionInfoInChannel(SocketIOClient client, UserSessionInfo info) {
+    public static void setUserSessionInfoInChannel(SocketIOClient client,
+            UserSessionInfo info) {
         ClientSessionMap.put(client, info);
     }
 
@@ -50,12 +50,12 @@ public class ChannelManager {
     }
 
     /**
-     * @param info user session info
+     * @param info   user session info
      * @param client socket.io client
      * @throws Exception
      */
-    public static void addUserClient(UserSessionInfo info, SocketIOClient client)
-            throws Exception {
+    public static void addUserClient(UserSessionInfo info,
+            SocketIOClient client) throws Exception {
         long userID = info.getUserID();
         if (userClientMapping.get(userID) == null) {
             userClientMapping.put(userID, new Vector<SocketIOClient>());
@@ -72,14 +72,15 @@ public class ChannelManager {
                 "Added to the cache: user {} is on {}", userID, address);
     }
 
-
-    public static void removeUserClient(SocketIOClient client) throws Exception {
+    public static void removeUserClient(SocketIOClient client)
+            throws Exception {
         UserSessionInfo info = getUserSessionInfo(client);
         if (ClientSessionMap.get(client) == null) {
             return;
         }
 
-        Vector<SocketIOClient> session = userClientMapping.get(info.getUserID());
+        Vector<SocketIOClient> session = userClientMapping
+                .get(info.getUserID());
         if (session == null) {
             LogUtils.logSessionInfo(logger, client,
                     "cannot find user channel in mapping");
@@ -87,8 +88,7 @@ public class ChannelManager {
         }
 
         userClientMapping.get(info.getUserID()).remove(client);
-        LogUtils.logSessionInfo(logger, client,
-                "channel removed from mapping");
+        LogUtils.logSessionInfo(logger, client, "channel removed from mapping");
         if (userClientMapping.get(info.getUserID()).isEmpty()) {
             userClientMapping.remove(info.getUserID());
 

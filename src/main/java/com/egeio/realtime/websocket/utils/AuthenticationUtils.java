@@ -60,14 +60,13 @@ public class AuthenticationUtils {
         }
     }
 
-    public static UserInfo getUserInfoFromToken(String token)
-            throws Exception {
+    public static UserInfo getUserInfoFromToken(String token) throws Exception {
         UserInfo userInfo = null;
         String url = String.format("%s://%s%s", PROTOCOL, HOST, API);
 
         try {
             String response = webClient.doGet(url, token);
-//            logger.info(uuid,"url:{}",url);
+            //            logger.info(uuid,"url:{}",url);
             logger.info(uuid, "get response from authentication server: {}",
                     response);
             if (response == null) {

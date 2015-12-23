@@ -51,8 +51,8 @@ public class MemCachedUtil {
      * @param userID              user id
      * @param realTimeNodeAddress real-time server address
      */
-    public static void writeMemCached(String userID,
-            int expireTime, String realTimeNodeAddress) throws Exception {
+    public static void writeMemCached(String userID, int expireTime,
+            String realTimeNodeAddress) throws Exception {
         Gson gson = GsonUtils.getGson();
         Set<String> addresses;
         //make sure key exists
@@ -110,20 +110,19 @@ public class MemCachedUtil {
                 new TypeToken<Set<String>>() {
                 }.getType());
         addresses.remove(realTimeNodeAddress);
-        if(addresses.isEmpty()){
+        if (addresses.isEmpty()) {
             Future<Boolean> future = memClient.delete(userID);
-            if(future.get()){
+            if (future.get()) {
                 return;
             }
         }
-        else{
+        else {
             CASResponse casResponse = memClient
                     .cas(userID, casValue.getCas(), gson.toJson(addresses));
             if (casResponse == CASResponse.OK) {
                 return;
             }
         }
-
 
         Thread.sleep(50);
         deleteFromMemCached(userID, realTimeNodeAddress);

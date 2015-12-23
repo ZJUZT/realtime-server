@@ -48,7 +48,6 @@ public class SocketIOHandler {
 
     private static final String Event = "realtime";
 
-
     //monitoring thread
     private static MonitorClient opentsdbClient;
     private static ScheduledExecutorService monitorExecutor = Executors
@@ -63,8 +62,7 @@ public class SocketIOHandler {
         long monitorInterval = Config.getNumber(intervalPath, 601);
 
         monitorExecutor.scheduleAtFixedRate(new Runnable() {
-            @Override
-            public void run() {
+            @Override public void run() {
                 sendMonitorInfo();
             }
         }, monitorInterval, monitorInterval, TimeUnit.SECONDS);
@@ -79,7 +77,8 @@ public class SocketIOHandler {
 
         try {
             tags.put("host", InetAddress.getLocalHost().getHostName());
-        } catch (UnknownHostException e) {
+        }
+        catch (UnknownHostException e) {
             logger.error(uuid, "unknow host error!", e);
         }
 
@@ -90,19 +89,19 @@ public class SocketIOHandler {
         opentsdbClient.send(records);
     }
 
-    @OnConnect
-    public void onConnectHandler(SocketIOClient client) {
+    @OnConnect public void onConnectHandler(SocketIOClient client) {
         logger.info(uuid, "connected to SocketIO Server");
     }
 
-    @OnDisconnect
-    public void onDisconnectHandler(SocketIOClient client) throws Exception {
+    @OnDisconnect public void onDisconnectHandler(SocketIOClient client)
+            throws Exception {
         ChannelManager.removeUserClient(client);
         logger.info(uuid, "disconnect with SocketIO Server");
     }
 
     @OnEvent(Event)
-    public void onRealtimeHandler(SocketIOClient client, String reqJson, AckRequest ackSender) throws Exception {
+    public void onRealtimeHandler(SocketIOClient client, String reqJson,
+            AckRequest ackSender) throws Exception {
         Gson gson = GsonUtils.getGson();
         JsonObject req = gson.fromJson(reqJson, JsonObject.class);
         LogUtils.logSessionInfo(logger, client, "channel received {}", req);
@@ -113,8 +112,7 @@ public class SocketIOHandler {
         }
 
         String action = req.get("action").getAsString();
-        BaseResponse baseRes = new BaseResponse(
-                action, OK_STATUS_CODE);
+        BaseResponse baseRes = new BaseResponse(action, OK_STATUS_CODE);
         String res;
         if (action == null) {
             baseRes.setStatusCode(FAILED_STATUS_CODE);
@@ -130,13 +128,16 @@ public class SocketIOHandler {
 
             if (action.equalsIgnoreCase(ActionType.ACTION_LOGIN)) {
                 doLogin(req.get("action_info").getAsJsonObject(), client);
-            } else if (action.equalsIgnoreCase(ActionType.ACTION_LOGOUT)) {
+            }
+            else if (action.equalsIgnoreCase(ActionType.ACTION_LOGOUT)) {
                 doLogout(client);
-            } else {
+            }
+            else {
                 baseRes.setStatusCode(INVALID_ACTION_STATUS_CODE);
                 baseRes.setErrorMessage("invalid action");
             }
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             e.printStackTrace();
             baseRes.setStatusCode(FAILED_STATUS_CODE);
         }
@@ -154,7 +155,8 @@ public class SocketIOHandler {
      * @param client      user client
      * @throws Exception
      */
-    private void doLogin(JsonObject action_info, SocketIOClient client) throws Exception {
+    private void doLogin(JsonObject action_info, SocketIOClient client)
+            throws Exception {
 
         String authToken = action_info.get("auth_token").getAsString();
         UserInfo userInfo = AuthenticationUtils.getUserInfoFromToken(authToken);
@@ -163,7 +165,8 @@ public class SocketIOHandler {
             UserSessionInfo info = new UserSessionInfo(authToken,
                     userInfo.getUserId(), userInfo.getUserName(), client);
             ChannelManager.addUserClient(info, client);
-            UserSessionInfo sessionInfo = new UserSessionInfo(authToken, info.getUserID(), info.getUserName(), client);
+            UserSessionInfo sessionInfo = new UserSessionInfo(authToken,
+                    info.getUserID(), info.getUserName(), client);
             ChannelManager.setUserSessionInfoInChannel(client, sessionInfo);
             LogUtils.logSessionInfo(logger, client,
                     "Add user {} channel into mapping", info.getUserID());
@@ -180,6 +183,5 @@ public class SocketIOHandler {
         ChannelManager.removeUserClient(client);
         client.sendEvent("realtime", "user logout");
     }
-
 
 }

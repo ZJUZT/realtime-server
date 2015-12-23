@@ -7,10 +7,8 @@ import com.egeio.core.config.Config;
 /**
  * Created by think on 2015/9/18.
  * Use socket.io to replace webSocket for more compatible
- *
  * SocketIO Server: (default port: 8080
  * maintain long connection
- *
  * Http server: (default port:8081)
  * handle http request from event processor
  */

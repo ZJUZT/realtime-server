@@ -18,8 +18,9 @@ public class UserSessionInfo {
 
     public UserSessionInfo(String token, long userID, String userName,
             SocketIOClient client) {
-        //user userID-deviceID in UUID
-        this.sessionID = new MyUUID(String.format("%s-%s", userID, client.getSessionId()));
+
+        this.sessionID = new MyUUID(
+                String.format("%s-%s", userID, client.getSessionId()));
         this.token = token;
         this.userID = userID;
         this.userName = userName;
@@ -37,7 +38,7 @@ public class UserSessionInfo {
         return userID;
     }
 
-    public String getUserName(){
+    public String getUserName() {
         return userName;
     }
 

@@ -16,11 +16,10 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
  */
 public class HttpServer {
     private final int port;
-    private static Logger logger = LoggerFactory
-            .getLogger(HttpServer.class);
-    private static MyUUID uuid= new MyUUID();
+    private static Logger logger = LoggerFactory.getLogger(HttpServer.class);
+    private static MyUUID uuid = new MyUUID();
 
-    public HttpServer(int port){
+    public HttpServer(int port) {
         this.port = port;
     }
 
@@ -38,9 +37,11 @@ public class HttpServer {
             ChannelFuture f = b.bind(port).sync();
             logger.info(uuid, "Http server started at port {}", port);
             f.channel().closeFuture().sync();
-        } catch (InterruptedException e) {
+        }
+        catch (InterruptedException e) {
             e.printStackTrace();
-        } finally {
+        }
+        finally {
             workerGroup.shutdownGracefully();
             bossGroup.shutdownGracefully();
         }

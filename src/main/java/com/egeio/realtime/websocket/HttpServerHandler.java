@@ -6,7 +6,7 @@ import com.egeio.core.log.LoggerFactory;
 import com.egeio.core.log.MyUUID;
 import com.egeio.core.utils.GsonUtils;
 import com.egeio.realtime.websocket.model.ActionType;
-import com.google.common.reflect.TypeToken;
+import com.egeio.realtime.websocket.model.RealTimeMsg;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -26,7 +26,6 @@ import io.netty.handler.codec.http.multipart.InterfaceHttpData;
 import io.netty.util.CharsetUtil;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 
 import static io.netty.handler.codec.http.HttpMethod.POST;
@@ -53,7 +52,8 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<Object> {
     }
 
     @Override
-    protected void channelRead0(ChannelHandlerContext channelHandlerContext, Object o) throws Exception {
+    protected void channelRead0(ChannelHandlerContext channelHandlerContext,
+            Object o) throws Exception {
         if (o instanceof HttpRequest) {
             handleHttp(channelHandlerContext, (FullHttpRequest) o);
         }
@@ -66,10 +66,10 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<Object> {
      * @param res http response
      */
     private void sendHttpResponse(ChannelHandlerContext ctx,
-                                  FullHttpResponse res) {
+            FullHttpResponse res) {
         if (res.getStatus().code() != 200) {
-            ByteBuf buf = Unpooled
-                    .copiedBuffer(res.getStatus().toString(), CharsetUtil.UTF_8);
+            ByteBuf buf = Unpooled.copiedBuffer(res.getStatus().toString(),
+                    CharsetUtil.UTF_8);
             res.content().writeBytes(buf);
             buf.release();
         }
@@ -84,10 +84,10 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<Object> {
      * @throws Exception
      */
     private void handleHttp(ChannelHandlerContext channelHandlerContext,
-                            FullHttpRequest request) throws Exception {
+            FullHttpRequest request) throws Exception {
 
         //POST method
-        //handle action to push new information in http request
+        //handle http request to push new info
         if (request.getMethod() == POST && request.getUri()
                 .equals(HTTP_REQUEST_PATH)) {
 
@@ -113,7 +113,8 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<Object> {
                 sendHttpResponse(channelHandlerContext,
                         new DefaultFullHttpResponse(HTTP_1_1, OK));
                 doSync(dataFromProcessor);
-            } else {
+            }
+            else {
                 logger.error(uuid, "Can't get userID from HTTP request");
             }
         }
@@ -136,78 +137,63 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<Object> {
             return;
         }
 
-        //get the users list to which the message will send
-        JsonArray userList = jsonObject.get("user_id").getAsJsonArray();
-        jsonObject.remove("user_id");
+        //get the users list which the message will send to
+        JsonArray userList = RealTimeMsg
+                .getByMemberName(jsonObject, "user_id", JsonArray.class);
 
-        //审阅、评论 user_type 会有区分
-        HashMap<Long, Object> userTypeMap = new HashMap<>();
-        HashMap<Long, String> userMessageMap;
-        HashMap<Long, String> userUrlMap = null;
-        String singleUrl = null;
+        // notice difference of user_type between review and comments
+        Map userTypeMap = RealTimeMsg
+                .getByMemberName(jsonObject, "user_type_map", Map.class);
 
-        if (jsonObject.get("user_type_map") != null) {
-            userTypeMap = gson.fromJson(jsonObject.get("user_type_map"),
-                    new TypeToken<Map<Long, Object>>() {
-                    }.getType());
-            jsonObject.remove("user_type_map");
-        }
+        Map userMessageMap = RealTimeMsg
+                .getByMemberName(jsonObject, "message_map", Map.class);
 
-        if (jsonObject.get("message_map") != null) {
-            userMessageMap = gson.fromJson(jsonObject.get("message_map"),
-                    new TypeToken<Map<Long, String>>() {
-                    }.getType());
-            jsonObject.remove("message_map");
-        } else {
+        if (userMessageMap == null) {
             throw new Exception("Can't find message_map");
         }
 
-        if (jsonObject.get("url_map") != null) {
-            userUrlMap = gson.fromJson(jsonObject.get("url_map"),
-                    new TypeToken<Map<Long, String>>() {
-                    }.getType());
-            jsonObject.remove("url_map");
-        } else if (jsonObject.get("url") != null) {
-            singleUrl = jsonObject.get("url").getAsString();
-        } else {
+        Map userUrlMap = RealTimeMsg
+                .getByMemberName(jsonObject, "url_map", Map.class);
+        String singleUrl = RealTimeMsg
+                .getByMemberName(jsonObject, "url", String.class);
+
+        if (userUrlMap == null && singleUrl == null) {
             throw new Exception("Can't find url information");
+
         }
 
         for (JsonElement userID : userList) {
+
             long uid = userID.getAsLong();
             Collection<SocketIOClient> clients = ChannelManager
                     .getClientsByUserID(uid);
 
             if (clients == null) {
                 logger.info(uuid, "No active channels for user:{}", userID);
-                return;
+                continue;
             }
 
-            JsonObject msg = new JsonObject();
-            msg.add("action", gson.fromJson(ActionType.ACTION_NEW_INFO,
-                    JsonElement.class));
+            RealTimeMsg msg = new RealTimeMsg(ActionType.ACTION_NEW_INFO);
+            msg.setActionInfo(jsonObject);
+
             if (userTypeMap != null) {
                 Object userType = userTypeMap.get(uid);
 
-                jsonObject.add("user_type",
-                        gson.fromJson(String.valueOf(userType),
-                                JsonElement.class));
+                msg.addActionInfo("user_type", String.valueOf(userType));
             }
 
-            String messageID = userMessageMap.get(uid);
-            jsonObject.add("message_id",
-                    gson.fromJson(messageID, JsonElement.class));
+            String messageID = String.valueOf(userMessageMap.get(uid));
 
+            msg.addActionInfo("message_id", messageID);
             String url;
             if (userUrlMap != null) {
-                url = userUrlMap.get(uid);
-            } else {
+                url = String.valueOf(userUrlMap.get(uid));
+            }
+            else {
                 url = singleUrl;
             }
 
-            jsonObject.add("url", gson.fromJson(url, JsonElement.class));
-            msg.add("action_info", jsonObject);
-
+            msg.addActionInfo("url", url);
             String request = gson.toJson(msg);
             for (SocketIOClient client : clients) {
                 if (!client.isChannelOpen()) {
